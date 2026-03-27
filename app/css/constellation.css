@@ -1,0 +1,723 @@
+/* ================================================================
+   CONSTELLATION HUD — Visualizacao de relacoes do elemento
+   Barra fixa na parte inferior do viewport 3D (full-width)
+   ================================================================ */
+
+#constellation-hud {
+    position: relative;
+    flex-shrink: 0;
+    z-index: 15;
+    pointer-events: auto;
+    height: var(--bottom-panel-height, 120px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: height 0.2s ease;
+}
+
+/* Handle de resize vertical no topo da constellation docked */
+.constellation-resize-top {
+    position: absolute;
+    top: -3px;
+    left: 0;
+    right: 0;
+    height: 6px;
+    cursor: ns-resize;
+    z-index: 20;
+    background: transparent;
+    transition: background 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.constellation-resize-top::before {
+    content: '';
+    width: 40px;
+    height: 3px;
+    border-radius: var(--radius-sm);
+    background: var(--bottom-text-faint);
+    opacity: 0.35;
+    transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.constellation-resize-top:hover::before {
+    background: var(--primary-500);
+    opacity: 1;
+}
+
+.constellation-resize-top:hover {
+    background: color-mix(in srgb, var(--primary-500) 15%, transparent);
+}
+
+/* Views preenchem o espaco disponivel via flex */
+.constellation-view {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+/* ---- Action button: + Obs ---- */
+.constellation-action-btn {
+    position: absolute;
+    top: 5px;
+    right: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 12px;
+    background: var(--bottom-hover);
+    border: 1px solid var(--bottom-border);
+    border-radius: var(--radius-sm);
+    color: var(--bottom-text-muted);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    z-index: 4;
+}
+
+.constellation-action-btn:hover {
+    background: var(--overlay-medium);
+    color: var(--bottom-text);
+    border-color: var(--bottom-accent);
+}
+
+.constellation-action-btn .icon {
+    width: 14px;
+    height: 14px;
+}
+
+/* ---- Canvas ---- */
+#constellation-canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: var(--bottom-bg);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border-top: 1px solid var(--bottom-border);
+    cursor: default;
+}
+
+/* ---- Collapsed mode — only tab bar visible ---- */
+#constellation-hud.constellation-collapsed {
+    transition: none;
+    overflow: hidden;
+}
+
+#constellation-hud.constellation-collapsed #constellation-canvas,
+#constellation-hud.constellation-collapsed .constellation-view {
+    height: 0;
+    flex: 0;
+    overflow: hidden;
+    border-top: none;
+}
+
+#constellation-hud.constellation-collapsed .constellation-tabs {
+    cursor: pointer;
+    justify-content: center;
+    gap: 4px;
+    padding: 2px 8px 2px 32px;
+    background: transparent;
+    border-bottom: none;
+    transition: background 0.15s ease;
+}
+
+#constellation-hud.constellation-collapsed .constellation-tabs:hover {
+    background: var(--bottom-hover, rgba(255,255,255,0.06));
+    border-radius: var(--radius-sm, 4px);
+}
+
+/* Tabs compactos — visiveis quando colapsado para descoberta do painel */
+#constellation-hud.constellation-collapsed .constellation-tab {
+    padding: 2px 10px;
+    font-size: 10px;
+}
+
+#constellation-hud.constellation-collapsed .constellation-tab .tab-icon {
+    width: 12px;
+    height: 12px;
+}
+
+/* Expand label escondida quando os tabs estao visiveis */
+#constellation-hud.constellation-collapsed .constellation-expand-label {
+    display: none;
+}
+
+/* Expand label — hidden when expanded, shown when collapsed */
+.constellation-expand-label {
+    display: none;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--bottom-accent);
+    pointer-events: none;
+}
+
+.constellation-expand-label svg {
+    width: 12px;
+    height: 12px;
+}
+
+#constellation-hud.constellation-collapsed .constellation-tabs:hover .constellation-expand-label {
+    color: var(--bottom-text, #fff);
+}
+
+/* ---- Collapse toggle button ---- */
+.constellation-collapse-btn {
+    position: absolute;
+    top: 5px;
+    left: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    background: transparent;
+    border: none;
+    color: var(--bottom-text-faint);
+    cursor: pointer;
+    z-index: 25;
+    transition: color 0.15s ease, transform 0.2s ease;
+    border-radius: var(--radius-sm);
+}
+
+.constellation-collapse-btn:hover {
+    background: var(--bottom-hover);
+    color: var(--bottom-text);
+}
+
+#constellation-hud.constellation-collapsed .constellation-collapse-btn {
+    display: none;
+}
+
+#constellation-hud.constellation-collapsed .constellation-resize-top {
+    display: none;
+}
+
+#constellation-hud.constellation-collapsed .constellation-action-btn {
+    display: none !important;
+}
+
+/* ================================================================
+   OBSERVATION EDIT CARD — Modern floating panel
+   ================================================================ */
+
+@keyframes obsCardSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.constellation-obs-edit {
+    position: absolute;
+    z-index: 20;
+    width: 280px;
+    pointer-events: auto;
+}
+
+.constellation-edit-card {
+    background: var(--neutral-0);
+    border: 1px solid var(--neutral-200);
+    border-radius: var(--radius-lg);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.22),
+        0 2px 8px rgba(0, 0, 0, 0.12),
+        0 0 0 1px rgba(0, 0, 0, 0.04);
+    overflow: hidden;
+    animation: obsCardSlideIn 0.15s ease-out;
+}
+
+/* Header with family accent stripe */
+.constellation-edit-card .obs-header {
+    padding: 8px 12px;
+    background: var(--neutral-100);
+    border-bottom: 1px solid var(--neutral-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+}
+
+.constellation-edit-card .obs-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--obs-family-color, var(--primary-500));
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.constellation-edit-card .obs-title {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--neutral-700);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.constellation-edit-card .obs-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1px 6px;
+    font-size: var(--text-xs, 10px);
+    font-weight: 700;
+    background: var(--overlay-light);
+    border-radius: 10px;
+    color: var(--neutral-500);
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Section containers */
+.constellation-edit-card .obs-section {
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--neutral-100);
+}
+
+.constellation-edit-card .obs-section:last-of-type {
+    border-bottom: none;
+}
+
+.constellation-edit-card .obs-section-title {
+    font-size: var(--text-xs, 10px);
+    font-weight: 600;
+    text-transform: uppercase;
+    color: var(--neutral-400);
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.constellation-edit-card .obs-section-title .section-icon {
+    width: 12px;
+    height: 12px;
+    opacity: 0.5;
+}
+
+/* Form controls — compact card */
+.constellation-edit-card .form-group {
+    margin-bottom: 6px;
+}
+
+.constellation-edit-card .form-group:last-child {
+    margin-bottom: 0;
+}
+
+.constellation-edit-card .form-label {
+    font-size: 10px;
+    color: var(--neutral-500);
+    margin-bottom: 3px;
+}
+
+.constellation-edit-card .form-input {
+    font-size: 11px;
+    padding: 5px 8px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--neutral-200);
+    background: var(--neutral-0);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.constellation-edit-card .form-input:focus {
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 2px rgba(61, 107, 122, 0.12);
+}
+
+/* Value input — monospace, emphasized */
+.constellation-edit-card .value-input {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 8px;
+    letter-spacing: -0.3px;
+}
+
+/* Unit selector — pill style */
+.constellation-edit-card .unit-select {
+    font-size: 10px;
+    padding: 5px 6px;
+    background: var(--neutral-50);
+    border: 1px solid var(--neutral-200);
+    border-radius: var(--radius-sm);
+    color: var(--neutral-600);
+    font-weight: 500;
+}
+
+/* Inline row for value + unit */
+.constellation-edit-row {
+    display: flex;
+    gap: 6px;
+    align-items: flex-end;
+}
+
+/* Footer with destructive action */
+.constellation-edit-footer {
+    padding: 6px 12px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.constellation-edit-footer .obs-remove-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--neutral-400);
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.constellation-edit-footer .obs-remove-btn:hover {
+    color: var(--error);
+    background: rgba(184, 68, 68, 0.08);
+}
+
+.constellation-edit-footer .obs-remove-btn .remove-icon {
+    width: 12px;
+    height: 12px;
+}
+
+/* ================================================================
+   OBSERVATION LIST POPOVER
+   ================================================================ */
+
+.constellation-obs-list {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    width: 380px;
+    max-height: 320px;
+    pointer-events: auto;
+}
+
+.constellation-list-card {
+    background: var(--neutral-0);
+    border: 1px solid var(--neutral-200);
+    border-radius: var(--radius-lg);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.22),
+        0 2px 8px rgba(0, 0, 0, 0.12);
+    overflow: hidden;
+    animation: obsCardSlideIn 0.15s ease-out;
+}
+
+.constellation-list-card .obs-header {
+    padding: 8px 12px;
+    background: var(--neutral-100);
+    border-bottom: 1px solid var(--neutral-200);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.constellation-list-card .obs-title {
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--neutral-700);
+}
+
+.constellation-list-body {
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.constellation-list-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: var(--space-2);
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--neutral-100);
+    cursor: pointer;
+    font-size: 11px;
+    transition: background 0.1s ease;
+    align-items: center;
+}
+
+.constellation-list-row:hover {
+    background: var(--neutral-50);
+}
+
+.constellation-list-row:last-child {
+    border-bottom: none;
+}
+
+.constellation-list-row:nth-child(even) {
+    background: var(--overlay-subtle, rgba(0,0,0,0.02));
+}
+
+.constellation-list-row:nth-child(even):hover {
+    background: var(--neutral-50);
+}
+
+.constellation-list-param {
+    font-weight: 500;
+    color: var(--neutral-700);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.constellation-list-value {
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--neutral-600);
+    font-size: 10px;
+    font-weight: 500;
+    background: var(--overlay-subtle, rgba(0,0,0,0.04));
+    padding: 1px 6px;
+    border-radius: var(--radius-sm);
+}
+
+.constellation-list-date {
+    color: var(--neutral-400);
+    font-size: 10px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ================================================================
+   TAB BAR
+   ================================================================ */
+
+.constellation-tabs {
+    display: flex;
+    gap: 2px;
+    position: relative;
+    z-index: 3;
+    flex-shrink: 0;
+    background: var(--bottom-bg-solid);
+    border-bottom: 1px solid var(--bottom-border);
+    padding: 4px 8px 4px 36px;
+    align-items: center;
+}
+
+.constellation-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--bottom-text-faint);
+    font-size: 11px;
+    font-weight: 500;
+    font-family: Inter, system-ui, sans-serif;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    position: relative;
+}
+
+.constellation-tab .tab-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    opacity: 0.6;
+    transition: opacity 0.15s ease;
+}
+
+.constellation-tab:hover {
+    color: var(--bottom-text-muted);
+    background: var(--bottom-hover);
+}
+
+.constellation-tab:hover .tab-icon {
+    opacity: 0.8;
+}
+
+.constellation-tab.active {
+    color: var(--bottom-text);
+    background: var(--overlay-light, rgba(255,255,255,0.08));
+}
+
+.constellation-tab.active .tab-icon {
+    opacity: 1;
+    color: var(--bottom-accent);
+}
+
+/* Active pill indicator at bottom of tab */
+.constellation-tab.active::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 8px;
+    right: 8px;
+    height: 2px;
+    background: var(--bottom-accent);
+    border-radius: var(--radius-sm);
+}
+
+/* ================================================================
+   PDPLU TABLE
+   ================================================================ */
+
+.pdplu-table-container {
+    height: 100%;
+    overflow-y: auto;
+    background: var(--bottom-bg);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+.pdplu-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    background: var(--bottom-bg-solid);
+    border-bottom: 1px solid var(--bottom-border);
+}
+
+.pdplu-toolbar-info {
+    color: var(--bottom-text-muted);
+    font-size: 10px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
+.pdplu-export-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: var(--bottom-hover);
+    border: 1px solid var(--bottom-border);
+    border-radius: var(--radius-sm);
+    color: var(--bottom-text-muted);
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.pdplu-export-btn:hover {
+    background: var(--overlay-medium);
+    color: var(--bottom-text);
+    border-color: var(--bottom-accent);
+}
+
+.pdplu-export-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.pdplu-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    color: var(--bottom-text);
+}
+
+.pdplu-table thead {
+    position: sticky;
+    top: 32px;
+    z-index: 1;
+}
+
+.pdplu-table th {
+    background: var(--bottom-bg-solid);
+    padding: 6px 10px;
+    font-weight: 600;
+    font-size: var(--text-xs, 10px);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    color: var(--bottom-text-muted);
+    border-bottom: 2px solid var(--bottom-border);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.pdplu-table th:hover {
+    color: var(--bottom-text);
+    cursor: pointer;
+}
+
+.pdplu-table td {
+    padding: 5px 10px;
+    border-bottom: 1px solid var(--bottom-border-subtle);
+    white-space: nowrap;
+}
+
+.pdplu-table tbody tr:nth-child(even) td {
+    background: var(--overlay-subtle, rgba(0,0,0,0.02));
+}
+
+.pdplu-table tr:hover td {
+    background: var(--bottom-hover);
+}
+
+.pdplu-table .pdplu-value {
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    text-align: right;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+}
+
+.pdplu-table .pdplu-var {
+    font-size: 10px;
+    text-align: center;
+    color: var(--bottom-text-muted);
+    max-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pdplu-table thead .pdplu-var {
+    font-size: var(--text-xs, 10px);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.pdplu-table .pdplu-empty {
+    text-align: center;
+    color: var(--bottom-text-faint);
+    padding: 48px 12px;
+    font-style: italic;
+    font-size: 12px;
+}
+
+/* ---- Report editor: estilos movidos para css/report.css ---- */
+
+#compass-canvas,
+#globe-canvas {
+    touch-action: none; /* Required for pointer events drag on touch devices */
+    background: var(--bottom-bg-solid);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--bottom-border);
+    box-shadow: var(--shadow-md);
+}
+
+#compass-canvas {
+    width: 80px;
+    height: 80px;
+}
+
+#globe-canvas {
+    width: 120px;
+    height: 120px;
+}

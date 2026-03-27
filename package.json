@@ -1,0 +1,25 @@
+{
+    "name": "ecbytes_open",
+    "version": "0.1.0",
+    "description": "Open-source Environmental Digital Twins — 3D site modeling with temporal monitoring data, scientific analytics, and blockchain-backed data integrity.",
+    "main": "app/index.html",
+    "scripts": {
+        "start": "npx serve"
+    },
+    "keywords": [
+        "environmental",
+        "digital-twin",
+        "hydrogeology",
+        "3d",
+        "monitoring",
+        "kriging",
+        "blockchain",
+        "eis"
+    ],
+    "author": "Calvin Stefan Iost",
+    "license": "AGPL-3.0-only",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/calvinsiost/ecbytes_open.git"
+    }
+}

@@ -1,0 +1,1057 @@
+/* ================================================================
+   EIS DASHBOARD — EnviroTech Integrity Score
+   Estilos do modal de dashboard interativo EIS.
+   ================================================================ */
+
+/* ── Verdict colors (Y11: mapped to global theme) ──────────────── */
+:root {
+    --eis-green:  var(--accent-green, #22c55e);   /* = global --accent-green */
+    --eis-yellow: var(--accent-yellow, #eab308);   /* = global --accent-yellow */
+    --eis-red:    var(--accent-red, #ef4444);       /* = global --accent-red */
+    --eis-bg:     rgba(15, 23, 42, 0.95);           /* dark overlay (EIS-specific) */
+    --eis-card:   rgba(30, 41, 59, 0.8);            /* card bg (EIS-specific) */
+    --eis-border: rgba(99, 102, 241, 0.2);
+    --eis-text:   rgba(255, 255, 255, 0.87);
+    --eis-muted:  rgba(255, 255, 255, 0.5);
+    --eis-accent: #6366f1;                          /* indigo (EIS-specific) */
+}
+
+/* ── Modal overlay ──────────────────────────────────────────────── */
+#eis-dashboard-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: var(--z-modal, 3200);
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(6px);
+}
+
+#eis-dashboard-modal.active {
+    display: flex;
+}
+
+/* ── Modal box ──────────────────────────────────────────────────── */
+.eis-modal {
+    background: var(--eis-bg);
+    border: 1px solid var(--eis-border);
+    border-radius: 16px;
+    width: 90%;
+    max-width: 820px;
+    max-height: 88vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+    animation: eisSlideIn 0.25s ease;
+}
+
+@keyframes eisSlideIn {
+    from { opacity: 0; transform: translateY(20px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Header ─────────────────────────────────────────────────────── */
+.eis-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--eis-border);
+}
+
+.eis-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--eis-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.eis-header h2 .eis-title-icon {
+    font-size: 18px;
+}
+
+.eis-close-btn {
+    background: none;
+    border: none;
+    color: var(--eis-muted);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: var(--radius-lg);
+    transition: background 0.15s, color 0.15s;
+}
+
+.eis-close-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: var(--eis-text);
+}
+
+/* ── Body ───────────────────────────────────────────────────────── */
+.eis-body {
+    padding: 20px 24px;
+}
+
+/* ── Top row: ring (left) + right stack (radar + bars + priorities) */
+.eis-top-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 16px;
+    margin-bottom: 12px;
+    align-items: start;
+}
+
+/* ── Score card (left) — compact ──────────────────────────────── */
+.eis-score-card {
+    background: var(--eis-card);
+    border: 1px solid var(--eis-border);
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 330px;
+    flex-shrink: 0;
+}
+
+/* ── Right stack (bars + priorities) ──────────────────────────── */
+.eis-right-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+}
+
+/* ── SVG Gauge ──────────────────────────────────────────────────── */
+/* ── Ring Chart (weighted donut) ───────────────────────────────── */
+.eis-ring-wrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 8px;
+}
+
+#eis-ring-canvas {
+    display: block;
+}
+
+/* ── Scale Strip ──────────────────────────────────────────────── */
+.eis-scale-strip {
+    margin: 10px 0 8px;
+    padding: 0 4px;
+}
+
+.eis-scale-track {
+    position: relative;
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(to right,
+        rgb(239,68,68) 0%,
+        rgb(249,115,22) 30%,
+        rgb(234,179,8) 50%,
+        rgb(34,197,94) 70%,
+        rgb(5,150,105) 100%);
+}
+
+.eis-scale-threshold {
+    position: absolute;
+    top: -14px;
+    transform: translateX(-50%);
+}
+
+.eis-scale-threshold-line {
+    display: block;
+    width: 1px;
+    height: 34px;
+    background: rgba(255,255,255,0.35);
+    margin: 0 auto;
+    border-left: 1px dashed rgba(255,255,255,0.35);
+    background: transparent;
+}
+
+.eis-scale-threshold-label {
+    display: block;
+    font-size: 9px;
+    color: rgba(255,255,255,0.45);
+    text-align: center;
+    margin-top: 2px;
+    white-space: nowrap;
+}
+
+.eis-scale-marker {
+    position: absolute;
+    top: -20px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: left 0.15s ease;
+}
+
+.eis-scale-marker-arrow {
+    font-size: 10px;
+    line-height: 1;
+}
+
+.eis-scale-marker-value {
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    white-space: nowrap;
+}
+
+.eis-scale-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 9px;
+    color: rgba(255,255,255,0.35);
+    padding: 0 2px;
+}
+
+/* ── Contribution Bars (with inline sliders) ─────────────────── */
+.eis-contrib-bars {
+    margin: 0;
+}
+
+.eis-contrib-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-bottom: 2px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: border-color 0.15s ease;
+}
+
+.eis-contrib-row.eis-contrib-warn {
+    border-color: rgba(239, 68, 68, 0.3);
+    background: rgba(239, 68, 68, 0.04);
+}
+
+.eis-contrib-row.eis-contrib-good {
+    border-color: rgba(34, 197, 94, 0.2);
+}
+
+.eis-contrib-icon {
+    font-size: 10px;
+    width: 14px;
+    text-align: center;
+    flex-shrink: 0;
+    font-weight: 700;
+}
+
+.eis-contrib-icon.warn { color: #ef4444; }
+.eis-contrib-icon.good { color: #22c55e; }
+
+.eis-contrib-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.7);
+    width: 20px;
+    text-align: right;
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+}
+
+.eis-contrib-weight {
+    font-size: 8px;
+    color: rgba(255,255,255,0.3);
+    width: 18px;
+    flex-shrink: 0;
+}
+
+.eis-contrib-track-wrap {
+    flex: 1;
+    position: relative;
+    min-width: 80px;
+}
+
+.eis-contrib-track {
+    width: 100%;
+    height: 100%;
+    min-height: 14px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.eis-contrib-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.1s ease;
+    opacity: 0.75;
+}
+
+.eis-contrib-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    margin: 0;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+.eis-contrib-slider:disabled {
+    cursor: default;
+}
+
+.eis-contrib-slider:not(:disabled):hover + .eis-contrib-track,
+.eis-contrib-slider:not(:disabled):active + .eis-contrib-track {
+    box-shadow: 0 0 0 1px rgba(99, 102, 241, 0.3);
+}
+
+.eis-contrib-score {
+    font-size: 10px;
+    font-weight: 700;
+    width: 26px;
+    text-align: right;
+    flex-shrink: 0;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+}
+
+.eis-contrib-auto-btn {
+    font-size: 8px;
+    font-weight: 700;
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: transparent;
+    color: rgba(255,255,255,0.4);
+    cursor: pointer;
+    padding: 0;
+    line-height: 14px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.eis-contrib-auto-btn.on {
+    border-color: var(--eis-accent, #6366f1);
+    color: var(--eis-accent, #6366f1);
+    background: rgba(99, 102, 241, 0.1);
+}
+
+.eis-contrib-auto-btn:hover {
+    border-color: rgba(255,255,255,0.3);
+}
+
+/* ── Ring Chart Tooltip ────────────────────────────────────────── */
+.eis-ring-tooltip {
+    position: fixed;
+    pointer-events: none;
+    background: rgba(16, 16, 28, 0.95);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    padding: 8px 10px;
+    border-radius: 4px;
+    font-size: 10px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.85);
+    display: none;
+    z-index: 3210;
+    max-width: 260px;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+}
+
+.eis-ring-tooltip b {
+    font-size: 11px;
+}
+
+.eis-ring-tooltip .eis-tip-hint {
+    color: var(--eis-accent, #6366f1);
+    font-style: italic;
+    font-size: 9px;
+}
+
+/* ── Axis Detail Card ─────────────────────────────────────────── */
+.eis-axis-detail {
+    margin: 0;
+    transition: max-height 0.2s ease;
+    overflow: hidden;
+}
+
+.eis-axis-detail:empty {
+    display: none;
+}
+
+.eis-axis-detail-card {
+    background: rgba(30, 41, 59, 0.6);
+    border: 1px solid var(--eis-border, rgba(99, 102, 241, 0.2));
+    border-radius: 8px;
+    padding: 14px 16px;
+    margin: 12px 0;
+}
+
+.eis-axis-detail-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.eis-axis-detail-abbr {
+    font-size: 14px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    padding: 2px 8px;
+    border-radius: 4px;
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--eis-accent, #6366f1);
+}
+
+.eis-axis-detail-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--eis-text, rgba(255, 255, 255, 0.87));
+    flex: 1;
+}
+
+.eis-axis-detail-score {
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+}
+
+.eis-axis-detail-desc {
+    font-size: 11px;
+    color: var(--eis-muted, rgba(255, 255, 255, 0.5));
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+.eis-axis-detail-source {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.6);
+    margin-bottom: 8px;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.eis-axis-detail-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.eis-axis-detail-bar-label {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.5);
+    width: 80px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.eis-axis-detail-bar-track {
+    flex: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.eis-axis-detail-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.15s ease;
+}
+
+.eis-axis-detail-bar-value {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.7);
+    width: 40px;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+}
+
+.eis-axis-detail-whatif {
+    margin-top: 10px;
+    padding: 6px 10px;
+    background: rgba(99, 102, 241, 0.08);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+    border-radius: 4px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.eis-axis-detail-whatif .delta {
+    font-weight: 700;
+    color: var(--eis-green, #22c55e);
+}
+
+/* ── Improvement Priority List ────────────────────────────────── */
+.eis-improve-list {
+    margin: 12px 0 0;
+}
+
+.eis-improve-list:empty {
+    display: none;
+}
+
+.eis-improve-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 8px;
+}
+
+.eis-improve-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.eis-improve-item:hover {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.eis-improve-rank {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--eis-accent, #6366f1);
+    width: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.eis-improve-axis {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    width: 120px;
+    flex-shrink: 0;
+}
+
+.eis-improve-scores {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.5);
+    font-family: 'JetBrains Mono', Consolas, monospace;
+    flex-shrink: 0;
+}
+
+.eis-improve-delta {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--eis-green, #22c55e);
+    margin-left: auto;
+    font-family: 'JetBrains Mono', Consolas, monospace;
+}
+
+.eis-improve-hint {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.4);
+    padding: 2px 0 0 24px;
+    margin-bottom: 4px;
+}
+
+/* ── Data Issues / Problems List ──────────────────────────────── */
+.eis-problems-section {
+    margin-top: 10px;
+    border-top: 1px solid var(--eis-border, rgba(99, 102, 241, 0.2));
+    padding-top: 8px;
+}
+
+.eis-problems-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.eis-problems-count {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--eis-red, #ef4444);
+}
+
+.eis-problems-list {
+    max-height: 160px;
+    overflow-y: auto;
+}
+
+.eis-problem-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px;
+    border-radius: 3px;
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.65);
+}
+
+.eis-problem-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.eis-problem-element {
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.eis-problem-field {
+    color: rgba(255, 255, 255, 0.4);
+    flex-shrink: 0;
+}
+
+.eis-problem-fix {
+    color: var(--eis-accent, #6366f1);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.eis-problem-goto {
+    font-size: 9px;
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background: transparent;
+    color: var(--eis-accent, #6366f1);
+    cursor: pointer;
+    padding: 0;
+    line-height: 16px;
+    text-align: center;
+    flex-shrink: 0;
+}
+
+.eis-problem-goto:hover {
+    background: rgba(99, 102, 241, 0.15);
+    border-color: var(--eis-accent, #6366f1);
+}
+
+.eis-problems-show-all {
+    display: block;
+    width: 100%;
+    padding: 4px 0;
+    margin-top: 4px;
+    font-size: 9px;
+    color: var(--eis-accent, #6366f1);
+    background: transparent;
+    border: 1px dashed rgba(99, 102, 241, 0.2);
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.eis-problems-show-all:hover {
+    background: rgba(99, 102, 241, 0.06);
+}
+
+.eis-problems-hint {
+    font-size: 9px;
+    color: rgba(255, 255, 255, 0.35);
+    font-style: italic;
+    margin-top: 8px;
+    padding: 6px 8px;
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 4px;
+}
+
+/* ── Refresh button ───────────────────────────────────────────── */
+.eis-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.eis-refresh-btn {
+    font-size: 16px;
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    cursor: pointer;
+    padding: 0;
+    line-height: 26px;
+    text-align: center;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.eis-refresh-btn:hover {
+    color: var(--eis-accent, #6366f1);
+    border-color: var(--eis-accent, #6366f1);
+}
+
+/* ── Verdict badge ──────────────────────────────────────────────── */
+.eis-verdict-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.eis-verdict-badge.green {
+    background: rgba(34, 197, 94, 0.12);
+    color: var(--eis-green);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.eis-verdict-badge.yellow {
+    background: rgba(234, 179, 8, 0.12);
+    color: var(--eis-yellow);
+    border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+.eis-verdict-badge.red {
+    background: rgba(239, 68, 68, 0.12);
+    color: var(--eis-red);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.eis-verdict-desc {
+    font-size: 11px;
+    color: var(--eis-muted);
+}
+
+/* ── Vetoed indicator ───────────────────────────────────────────── */
+.eis-vetoed-badge {
+    display: none;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: var(--radius-lg);
+    font-size: 11px;
+    font-weight: 700;
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--eis-red);
+    border: 1px solid rgba(239, 68, 68, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.eis-vetoed-badge.visible {
+    display: inline-flex;
+}
+
+/* ── Controls row (mode + credential) ───────────────────────────── */
+/* ── Advanced Settings (details/summary) ──────────────────────── */
+.eis-advanced-details {
+    margin: 6px 0 0;
+}
+
+.eis-advanced-summary {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--eis-muted, rgba(255,255,255,0.5));
+    cursor: pointer;
+    padding: 6px 0;
+    list-style: none;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.eis-advanced-summary::-webkit-details-marker { display: none; }
+
+.eis-advanced-summary::before {
+    content: '&#9654; ';
+    font-size: 8px;
+    margin-right: 4px;
+    display: inline-block;
+    transition: transform 0.15s ease;
+}
+
+.eis-advanced-details[open] > .eis-advanced-summary::before {
+    transform: rotate(90deg);
+}
+
+.eis-advanced-summary:hover {
+    color: var(--eis-text, rgba(255,255,255,0.87));
+}
+
+.eis-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    width: 100%;
+    padding: 8px 0;
+}
+
+.eis-control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 0 1 auto;
+}
+
+.eis-control-label {
+    font-size: 10px;
+    color: var(--eis-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/* ── Mode toggle ────────────────────────────────────────────────── */
+.eis-mode-toggle {
+    display: flex;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    border: 1px solid var(--eis-border);
+}
+
+.eis-mode-btn {
+    flex: 1;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.78);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.eis-mode-btn + .eis-mode-btn {
+    border-left: 1px solid var(--eis-border);
+}
+
+.eis-mode-btn.active {
+    background: var(--eis-accent);
+    color: #fff;
+}
+
+.eis-mode-btn:hover:not(.active) {
+    background: rgba(255, 255, 255, 0.12);
+    color: #fff;
+}
+
+/* ── Credential info (read-only, computed from data) ────────────── */
+.eis-credential-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--eis-border);
+    border-radius: var(--radius-xl);
+}
+
+.eis-cred-mult {
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--eis-accent);
+}
+
+.eis-cred-count {
+    font-size: 11px;
+    color: var(--eis-muted);
+}
+
+.eis-cred-breakdown {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.35);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Radar chart card (right) ───────────────────────────────────── */
+.eis-radar-card {
+    background: var(--eis-card);
+    border: 1px solid var(--eis-border);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 200px;
+}
+
+.eis-radar-canvas {
+    max-width: 100%;
+    max-height: 220px;
+}
+
+/* ── Sliders section ────────────────────────────────────────────── */
+.eis-sliders-section {
+    background: var(--eis-card);
+    border: 1px solid var(--eis-border);
+    border-radius: 12px;
+    padding: 16px 20px;
+}
+
+.eis-sliders-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--eis-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 12px;
+}
+
+/* ── Slider row ─────────────────────────────────────────────────── */
+.eis-slider-row {
+    display: grid;
+    grid-template-columns: 30px 1fr auto 36px 40px;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+}
+
+.eis-slider-row + .eis-slider-row {
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.eis-axis-abbr {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--eis-accent);
+}
+
+.eis-axis-name {
+    font-size: 12px;
+    color: var(--eis-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Range slider custom ────────────────────────────────────────── */
+.eis-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    outline: none;
+    cursor: pointer;
+}
+
+.eis-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--eis-accent);
+    border: 2px solid #fff;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    transition: transform 0.1s;
+}
+
+.eis-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+}
+
+.eis-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--eis-accent);
+    border: 2px solid #fff;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.eis-slider-value {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 24px;
+    border-radius: var(--radius-lg);
+    background: rgba(99, 102, 241, 0.15);
+    color: var(--eis-accent);
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.eis-slider-weight {
+    font-size: 10px;
+    color: var(--eis-muted);
+    text-align: right;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────── */
+.eis-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 24px;
+    border-top: 1px solid var(--eis-border);
+}
+
+.eis-btn {
+    padding: 7px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--eis-border);
+    background: transparent;
+    color: var(--eis-muted);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.eis-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--eis-text);
+}
+
+.eis-btn-primary {
+    background: var(--eis-accent);
+    color: #fff;
+    border-color: var(--eis-accent);
+}
+
+.eis-btn-primary:hover {
+    background: #5558e6;
+}
+
+/* ── Responsive: stack on narrow ────────────────────────────────── */
+@media (max-width: 640px) {
+    .eis-top-row {
+        grid-template-columns: 1fr;
+    }
+    .eis-score-card {
+        width: 100%;
+    }
+    .eis-slider-row {
+        grid-template-columns: 28px auto 1fr 28px 34px;
+        gap: 6px;
+    }
+    .eis-modal {
+        width: 96%;
+        max-height: 92vh;
+    }
+}
+
+/* ── HUD Mini Radar Canvas ───────────────────────────────────────── */
+#eis-hud-canvas {
+    border-radius: var(--radius-lg);
+    transition: opacity 0.2s;
+}
+
+#eis-hud-canvas:hover {
+    opacity: 0.85;
+}

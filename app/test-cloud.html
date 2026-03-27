@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html><head><title>Cloud Module Test</title></head>
+<body>
+<pre id="log">Testing cloud module imports...</pre>
+<script type="module">
+const log = document.getElementById('log');
+function l(msg) { log.textContent += '\n' + msg; console.log(msg); }
+
+try {
+    l('1. Testing validation.js...');
+    const val = await import('/js/utils/cloud/validation.js');
+    l('   OK: ' + Object.keys(val).join(', '));
+} catch(e) { l('   FAIL: ' + e.message); }
+
+try {
+    l('2. Testing session.js...');
+    const ses = await import('/js/utils/auth/session.js');
+    l('   OK: ' + Object.keys(ses).join(', '));
+} catch(e) { l('   FAIL: ' + e.message); }
+
+try {
+    l('3. Testing manager.js...');
+    const mgr = await import('/js/utils/cloud/manager.js');
+    l('   OK: ' + Object.keys(mgr).join(', '));
+} catch(e) { l('   FAIL: ' + e.message); }
+
+try {
+    l('4. Testing professional.js...');
+    const pro = await import('/js/utils/cloud/professional.js');
+    l('   OK: ' + Object.keys(pro).join(', '));
+} catch(e) { l('   FAIL: ' + e.message); }
+
+try {
+    l('5. Testing subscription.js...');
+    const sub = await import('/js/utils/cloud/subscription.js');
+    l('   OK: ' + Object.keys(sub).join(', '));
+} catch(e) { l('   FAIL: ' + e.message); }
+
+try {
+    l('6. Testing handlers/cloud.js...');
+    const hnd = await import('/js/utils/handlers/cloud.js');
+    l('   OK: ' + Object.keys(hnd).join(', '));
+} catch(e) { l('   FAIL: ' + e.message); }
+
+try {
+    l('7. Testing export.js (professionalValidation)...');
+    const exp = await import('/js/core/io/export.js');
+    l('   OK: has buildModel=' + (typeof exp.buildModel === 'function'));
+} catch(e) { l('   FAIL: ' + e.message); }
+
+try {
+    l('8. Testing promptBuilder.js...');
+    const pb = await import('/js/core/llm/promptBuilder.js');
+    l('   OK: has buildSystemPrompt=' + (typeof pb.buildSystemPrompt === 'function'));
+} catch(e) { l('   FAIL: ' + e.message); }
+
+l('\nDone!');
+</script>
+</body>
+</html>

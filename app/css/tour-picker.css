@@ -1,0 +1,428 @@
+/* ================================================================
+   GUIDED TOUR PICKER — 2-level category/tour selector
+   Estilos para o seletor de 50 tours guiados
+
+   Z-index: 10002 (acima do tour tooltip em 10001)
+   Layout: modal centralizado com overlay escuro
+   ================================================================ */
+
+/* ---- Overlay + Modal ---- */
+
+.guided-tour-picker {
+    position: fixed;
+    inset: 0;
+    z-index: 10002;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+
+.gtp-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+}
+
+.gtp-modal {
+    position: relative;
+    width: min(520px, 90vw);
+    max-height: min(680px, 85vh);
+    background: var(--surface-2, #1e1e2e);
+    border: 1px solid var(--border-color, #333);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    overflow: hidden;
+}
+
+/* ---- Header ---- */
+
+.gtp-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--border-color, #333);
+}
+
+.gtp-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary, #e0e0e0);
+}
+
+.gtp-header-text {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gtp-progress-label {
+    font-size: 11px;
+    color: var(--text-secondary, #888);
+}
+
+.gtp-back,
+.gtp-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary, #888);
+    cursor: pointer;
+    padding: 10px;
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.gtp-back:hover,
+.gtp-close:hover {
+    background: var(--hover-bg, #333);
+    color: var(--text-primary, #e0e0e0);
+}
+
+.gtp-back:active,
+.gtp-close:active {
+    transform: scale(0.95);
+}
+
+.gtp-back:focus-visible,
+.gtp-close:focus-visible {
+    outline: 2px solid var(--accent-primary, #3b82f6);
+    outline-offset: 2px;
+}
+
+/* ---- Progress Bar ---- */
+
+.gtp-progress-bar {
+    height: 3px;
+    background: var(--border-color, #333);
+}
+
+.gtp-progress-fill {
+    height: 100%;
+    background: var(--accent-teal, #14b8a6);
+    transition: width 0.3s ease;
+    border-radius: 0 2px 2px 0;
+}
+
+/* ---- Search ---- */
+
+.gtp-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border-color, #333);
+}
+
+.gtp-search-icon {
+    color: var(--text-secondary, #888);
+    flex-shrink: 0;
+    display: flex;
+}
+
+.gtp-search-input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text-primary, #e0e0e0);
+    font-size: 13px;
+    outline: none;
+    font-family: inherit;
+}
+
+.gtp-search-input:focus-visible {
+    outline: 2px solid var(--accent-primary, #3b82f6);
+    outline-offset: -2px;
+    border-radius: 2px;
+}
+
+.gtp-search-input::placeholder {
+    color: var(--text-secondary, #666);
+}
+
+/* ---- Body (scrollable) ---- */
+
+.gtp-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+/* ---- Category Cards ---- */
+
+.gtp-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.gtp-category-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text-primary, #e0e0e0);
+    font-family: inherit;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.gtp-category-card:hover {
+    background: var(--hover-bg, #2a2a3e);
+    border-color: var(--border-color, #444);
+}
+
+.gtp-category-card:active {
+    transform: scale(0.98);
+}
+
+.gtp-category-card:focus-visible {
+    outline: 2px solid var(--accent-primary, #3b82f6);
+    outline-offset: 2px;
+}
+
+.gtp-cat-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.gtp-cat-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.gtp-cat-name {
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gtp-cat-desc {
+    font-size: 11px;
+    color: var(--text-secondary, #888);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gtp-cat-stats {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.gtp-cat-count {
+    font-size: 11px;
+    color: var(--text-secondary, #888);
+}
+
+.gtp-cat-bar {
+    width: 48px;
+    height: 4px;
+    background: var(--border-color, #333);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.gtp-cat-bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+/* ---- Tour List ---- */
+
+.gtp-tour-list-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary, #e0e0e0);
+}
+
+.gtp-tour-list-icon {
+    display: flex;
+}
+
+.gtp-tour-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.gtp-tour-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 14px 12px;
+    background: none;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    color: var(--text-primary, #e0e0e0);
+    font-family: inherit;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.gtp-tour-item:hover {
+    background: var(--hover-bg, #2a2a3e);
+    border-color: var(--border-color, #444);
+}
+
+.gtp-tour-item:active {
+    transform: scale(0.98);
+}
+
+.gtp-tour-item:focus-visible {
+    outline: 2px solid var(--accent-primary, #3b82f6);
+    outline-offset: 2px;
+}
+
+.gtp-tour-done {
+    opacity: 0.7;
+}
+
+.gtp-tour-check {
+    flex-shrink: 0;
+    display: flex;
+    color: var(--text-secondary, #666);
+}
+
+.gtp-tour-done .gtp-tour-check {
+    color: #22c55e;
+}
+
+.gtp-tour-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.gtp-tour-name {
+    font-size: 13px;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gtp-tour-desc {
+    font-size: 11px;
+    color: var(--text-secondary, #888);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gtp-tour-cat-tag {
+    font-size: 10px;
+    font-weight: 500;
+}
+
+.gtp-tour-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.gtp-tour-time,
+.gtp-tour-steps {
+    font-size: 10px;
+    color: var(--text-secondary, #888);
+}
+
+/* ---- Difficulty Badges ---- */
+
+.gtp-tour-badge {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.gtp-diff-beginner {
+    background: #22c55e20;
+    color: #22c55e;
+}
+
+.gtp-diff-intermediate {
+    background: #3b82f620;
+    color: #3b82f6;
+}
+
+.gtp-diff-advanced {
+    background: #a855f720;
+    color: #a855f7;
+}
+
+/* ---- Search Results ---- */
+
+.gtp-search-count {
+    font-size: 11px;
+    color: var(--text-secondary, #888);
+    padding: 4px 12px 8px;
+}
+
+.gtp-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-secondary, #666);
+    font-size: 13px;
+}
+
+.gtp-empty-hint {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 600px) {
+    .gtp-modal {
+        width: 95vw;
+        max-height: 90vh;
+        border-radius: 8px;
+    }
+
+    .gtp-tour-meta {
+        flex-direction: column;
+        gap: 2px;
+    }
+}

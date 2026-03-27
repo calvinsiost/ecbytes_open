@@ -1,0 +1,317 @@
+/* ================================================================
+   WORKFLOWS — Estilos para workflow picker e wizard modal
+   ================================================================ */
+
+/* ── Picker: Modal body override ──────────────────────────────── */
+
+#workflow-picker-content {
+    max-height: 60vh;
+}
+
+/* ── Picker: Cards de workflow ─────────────────────────────────── */
+
+.workflow-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    padding: 8px 0;
+}
+
+.workflow-card {
+    background: var(--card-bg, #1e1e2e);
+    border: 1px solid var(--border-color, #333);
+    border-radius: 10px;
+    padding: 20px;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.workflow-card:hover {
+    border-color: var(--accent, #4a9eff);
+    box-shadow: 0 2px 12px rgba(74, 158, 255, 0.15);
+}
+.workflow-card.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.workflow-card.disabled:hover {
+    border-color: var(--border-color, #333);
+    box-shadow: none;
+}
+
+.workflow-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.workflow-card-icon {
+    font-size: 20px;
+    color: var(--accent, #4a9eff);
+}
+.workflow-card-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary, #e0e0e0);
+}
+.workflow-card-regulation {
+    font-size: 11px;
+    color: var(--text-secondary, #888);
+    background: var(--bg-subtle, rgba(255,255,255,0.05));
+    padding: 2px 8px;
+    border-radius: var(--radius-md);
+    margin-left: auto;
+}
+
+.workflow-card-desc {
+    font-size: 13px;
+    color: var(--text-secondary, #aaa);
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
+
+.workflow-card-prereqs {
+    font-size: 12px;
+    color: var(--text-secondary, #888);
+}
+.workflow-card-prereqs .prereq-met {
+    color: var(--success, #4caf50);
+}
+.workflow-card-prereqs .prereq-missing {
+    color: var(--error, #f44336);
+}
+
+/* ── Wizard: Progress bar ──────────────────────────────────────── */
+
+.workflow-progress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 0 16px;
+    border-bottom: 1px solid var(--border-color, #333);
+    margin-bottom: 16px;
+}
+
+.workflow-progress-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--bg-subtle, rgba(255,255,255,0.1));
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+.workflow-progress-fill {
+    height: 100%;
+    background: var(--accent, #4a9eff);
+    border-radius: var(--radius-sm);
+    transition: width 0.3s ease;
+}
+
+.workflow-progress-label {
+    font-size: 12px;
+    color: var(--text-secondary, #888);
+    white-space: nowrap;
+}
+
+/* ── Wizard: Step content ──────────────────────────────────────── */
+
+.workflow-step {
+    padding: 8px 0;
+}
+
+.workflow-step-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary, #e0e0e0);
+    margin-bottom: 8px;
+}
+
+.workflow-step-desc {
+    font-size: 13px;
+    color: var(--text-secondary, #aaa);
+    line-height: 1.6;
+    margin-bottom: 16px;
+}
+
+/* ── Decision step: Radio/Picker ───────────────────────────────── */
+
+.workflow-radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.workflow-radio-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--bg-subtle, rgba(255,255,255,0.03));
+    border: 1px solid var(--border-color, #333);
+    border-radius: var(--radius-xl);
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+.workflow-radio-option:hover {
+    border-color: var(--accent, #4a9eff);
+}
+.workflow-radio-option.selected {
+    border-color: var(--accent, #4a9eff);
+    background: rgba(74, 158, 255, 0.08);
+}
+.workflow-radio-option input[type="radio"] {
+    accent-color: var(--accent, #4a9eff);
+}
+
+.workflow-select {
+    width: 100%;
+    max-width: 400px;
+    padding: 8px 12px;
+    background: var(--input-bg, #1e1e2e);
+    border: 1px solid var(--border-color, #333);
+    border-radius: var(--radius-lg);
+    color: var(--text-primary, #e0e0e0);
+    font-size: 13px;
+}
+
+/* ── Execution step: Progress ──────────────────────────────────── */
+
+.workflow-exec-progress {
+    text-align: center;
+    padding: 32px 0;
+}
+
+.workflow-exec-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-color, #333);
+    border-top: 3px solid var(--accent, #4a9eff);
+    border-radius: 50%;
+    animation: workflow-spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes workflow-spin {
+    to { transform: rotate(360deg); }
+}
+
+.workflow-exec-label {
+    font-size: 14px;
+    color: var(--text-secondary, #aaa);
+}
+
+.workflow-exec-bar {
+    width: 100%;
+    max-width: 400px;
+    height: 6px;
+    background: var(--bg-subtle, rgba(255,255,255,0.1));
+    border-radius: 3px;
+    overflow: hidden;
+    margin: 12px auto 0;
+}
+.workflow-exec-bar-fill {
+    height: 100%;
+    background: var(--accent, #4a9eff);
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+/* ── Review step: Summary cards ────────────────────────────────── */
+
+.workflow-review-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.workflow-review-card {
+    background: var(--bg-subtle, rgba(255,255,255,0.03));
+    border: 1px solid var(--border-color, #333);
+    border-radius: var(--radius-xl);
+    padding: 14px;
+}
+.workflow-review-card-label {
+    font-size: 11px;
+    color: var(--text-secondary, #888);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+.workflow-review-card-value {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary, #e0e0e0);
+}
+.workflow-review-card-value.critical {
+    color: var(--error, #f44336);
+}
+.workflow-review-card-value.success {
+    color: var(--success, #4caf50);
+}
+
+/* ── Footer: Navigation buttons ────────────────────────────────── */
+
+.workflow-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color, #333);
+    margin-top: 16px;
+}
+
+.workflow-footer-left,
+.workflow-footer-right {
+    display: flex;
+    gap: 8px;
+}
+
+.workflow-btn {
+    padding: 8px 20px;
+    border: 1px solid var(--border-color, #333);
+    border-radius: var(--radius-lg);
+    background: transparent;
+    color: var(--text-primary, #e0e0e0);
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+}
+.workflow-btn:hover {
+    background: var(--bg-subtle, rgba(255,255,255,0.05));
+    border-color: var(--text-secondary, #888);
+}
+.workflow-btn.primary {
+    background: var(--accent, #4a9eff);
+    border-color: var(--accent, #4a9eff);
+    color: #fff;
+}
+.workflow-btn.primary:hover {
+    background: var(--accent-hover, #3a8eef);
+}
+.workflow-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ── Exceedance table ──────────────────────────────────────────── */
+
+.workflow-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+    margin: 12px 0;
+}
+.workflow-table th {
+    text-align: left;
+    padding: 6px 10px;
+    color: var(--text-secondary, #888);
+    border-bottom: 1px solid var(--border-color, #333);
+    font-weight: 500;
+}
+.workflow-table td {
+    padding: 6px 10px;
+    color: var(--text-primary, #e0e0e0);
+    border-bottom: 1px solid var(--border-color, rgba(255,255,255,0.05));
+}
+.workflow-table tr.exceed td {
+    color: var(--error, #f44336);
+}

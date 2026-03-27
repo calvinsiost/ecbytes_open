@@ -1,0 +1,31 @@
+{
+  "id": "cetesb-dd256",
+  "name": "CETESB DD-256/2016",
+  "version": "1.0",
+  "jurisdiction": "BR-SP",
+  "matrices": ["groundwater", "soil"],
+  "rules": [
+    {
+      "ruleId": "cetesb-001",
+      "type": "threshold",
+      "casNumber": "71-43-2",
+      "matrix": "groundwater",
+      "thresholds": [
+        { "type": "vr", "value": 0.001, "unit": "ug_L", "severity": "reference" },
+        { "type": "vp", "value": 5, "unit": "ug_L", "severity": "prevention" },
+        { "type": "vi", "value": 5, "unit": "ug_L", "severity": "intervention" }
+      ]
+    },
+    {
+      "ruleId": "cetesb-002",
+      "type": "required_field",
+      "field": "parameter.casNumber"
+    },
+    {
+      "ruleId": "cetesb-003",
+      "type": "unit_check",
+      "parameterId": "benzene",
+      "allowedUnits": ["ug_L", "mg_L"]
+    }
+  ]
+}

@@ -1,0 +1,551 @@
+/* ================================================================
+   RESPONSIVE — Mobile & Tablet Overrides
+   ================================================================
+
+   Y8: Canonical breakpoint reference (CSS vars can't be used in
+   @media queries, so these are documented as constants):
+
+   --bp-sm:  480px   (small phone — minimal UI)
+   --bp-md:  768px   (tablet portrait — body.mobile threshold)
+   --bp-lg:  1024px  (tablet landscape / desktop — body.tablet threshold)
+   --bp-xl:  1400px  (wide desktop — expanded sidebars)
+
+   All module CSS files should use these values consistently.
+   Primary selectors: body.mobile / body.tablet (set via mobileMenu.js).
+   @media queries used as JS-free fallback.
+
+   Este arquivo é carregado POR ÚLTIMO no index.html para que
+   suas regras tenham precedência sobre os estilos desktop.
+   ================================================================ */
+
+/* ================================================================
+   1. MOBILE — body.mobile OU viewport < 768px
+   ================================================================ */
+
+/* ---- Grid principal: colapsar para 1 coluna ---- */
+body.mobile #app {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: 48px 0px 0px 1fr 0px !important;
+    height: calc(100vh - 56px) !important; /* espaço para bottom nav */
+}
+
+/* Forçar todos os elementos grid para coluna única */
+body.mobile #titlebar   { grid-column: 1 !important; grid-row: 1 !important; }
+body.mobile #menubar    { grid-column: 1 !important; display: none !important; }
+body.mobile #toolbar    { grid-column: 1 !important; display: none !important; }
+body.mobile #main-area  { grid-column: 1 !important; grid-row: 4 !important; }
+body.mobile #statusbar  { display: none !important; }
+body.mobile .resize-handle { display: none !important; }
+
+/* ---- Titlebar mobile ---- */
+body.mobile #titlebar {
+    height: 48px;
+    padding: 0 8px !important;
+    gap: 8px;
+}
+
+body.mobile #titlebar .version { display: none; }
+body.mobile #titlebar .language-selector { display: none; }
+body.mobile #titlebar .titlebar-chip:not(#auth-button) { display: none; }
+
+/* ---- R1: Touch targets >= 44px (iOS HIG / Material minimum) ---- */
+body.mobile button,
+body.mobile [role="button"],
+body.mobile .tab-btn,
+body.mobile .panel-tab,
+body.mobile .constellation-tab,
+body.mobile a.clickable,
+body.mobile select {
+    min-height: 44px;
+    min-width: 44px;
+}
+/* RED-A1: Constellation tabs use padding instead of raw min-height */
+body.mobile .constellation-tab {
+    min-height: 0;
+    padding: 8px 12px;
+}
+
+/* Hamburger visível */
+body.mobile .mobile-hamburger {
+    display: flex !important;
+    width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--window-text);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    flex-shrink: 0;
+}
+body.mobile .mobile-hamburger:active {
+    background: var(--window-dark-2);
+}
+
+/* ---- Paineis como drawers off-canvas ---- */
+body.mobile #left-panel,
+body.mobile #right-panel {
+    position: fixed !important;
+    top: 48px !important;
+    bottom: 56px !important;
+    width: 85vw !important;
+    max-width: 320px !important;
+    z-index: 500 !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: var(--window-dark) !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.25) !important;
+    overflow-y: auto !important;
+}
+
+body.mobile #left-panel {
+    left: 0 !important;
+    right: auto !important;
+    transform: translateX(-100%) !important;
+}
+
+body.mobile #right-panel {
+    right: 0 !important;
+    left: auto !important;
+    transform: translateX(100%) !important;
+}
+
+body.mobile #left-panel.drawer-open {
+    transform: translateX(0) !important;
+}
+
+body.mobile #right-panel.drawer-open {
+    transform: translateX(0) !important;
+}
+
+/* Quando minimizado no desktop, garantir que no mobile funcione */
+body.mobile #left-panel.panel-minimized,
+body.mobile #right-panel.panel-minimized {
+    display: flex !important;
+}
+
+/* Ocultar min-tabs (replaced by bottom nav) */
+body.mobile .min-tabs { display: none !important; }
+
+/* ---- Drawer backdrop ---- */
+body.mobile #drawer-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 499;
+    -webkit-tap-highlight-color: transparent;
+}
+body.mobile #drawer-backdrop.active {
+    display: block;
+}
+
+/* ---- Mobile menu overlay ---- */
+body.mobile #mobile-menu-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 800;
+    background: var(--window-dark);
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+    display: block;
+}
+
+body.mobile #mobile-menu-overlay.open {
+    transform: translateX(0);
+}
+
+.mobile-menu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--window-border);
+    height: 48px;
+}
+
+.mobile-menu-header .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: var(--window-text);
+}
+
+.mobile-menu-close {
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: var(--window-text);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+}
+
+.mobile-menu-tabs {
+    display: flex;
+    flex-direction: column;
+    padding: 8px 0;
+}
+
+.mobile-menu-tab {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: none;
+    border: none;
+    color: var(--window-text);
+    font-size: 15px;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    min-height: 48px;
+    border-bottom: 1px solid var(--window-border);
+}
+
+.mobile-menu-tab:active {
+    background: var(--window-dark-2);
+}
+
+.mobile-menu-tab .icon {
+    width: 20px;
+    height: 20px;
+    color: var(--primary-300);
+}
+
+/* Seção de ações extras no menu */
+.mobile-menu-extras {
+    padding: 12px 16px;
+    border-top: 1px solid var(--window-border);
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.mobile-menu-extras .language-selector {
+    display: flex !important;
+    gap: 8px;
+}
+
+/* ---- Bottom navigation bar ---- */
+body.mobile .mobile-bottom-nav {
+    display: flex !important;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: var(--window-dark);
+    border-top: 1px solid var(--window-border);
+    z-index: 600;
+    justify-content: space-around;
+    align-items: center;
+    padding: 0 4px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.mobile-nav-btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: none;
+    border: none;
+    color: var(--window-muted);
+    font-size: 10px;
+    font-family: inherit;
+    padding: 6px 0;
+    min-height: 44px;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-nav-btn:active {
+    color: var(--primary-300);
+}
+
+.mobile-nav-btn .icon {
+    width: 22px;
+    height: 22px;
+}
+
+.mobile-nav-btn span:last-child {
+    font-size: 10px;
+    line-height: 1;
+}
+
+/* ---- AI FAB e chat: reposicionar acima da bottom nav ---- */
+body.mobile .ai-widget-fab {
+    bottom: 68px !important;
+}
+
+body.mobile .llm-chat-panel {
+    bottom: 64px !important;
+    max-height: calc(100vh - 120px) !important;
+}
+
+/* ---- Touch-friendly sizing ---- */
+body.mobile .btn,
+body.mobile button:not(.mobile-nav-btn):not(.mobile-menu-tab):not(.mobile-hamburger):not(.mobile-menu-close) {
+    min-height: 40px;
+}
+
+body.mobile .view-btn {
+    width: 44px !important;
+    height: 44px !important;
+    font-size: 18px !important;
+}
+
+body.mobile .section-header {
+    min-height: 44px;
+    padding: var(--space-3) var(--space-4);
+}
+
+body.mobile .tab {
+    min-height: 40px;
+    padding: 8px 12px;
+}
+
+/* Prevenir zoom iOS em inputs */
+body.mobile input,
+body.mobile select,
+body.mobile textarea {
+    font-size: 16px !important;
+}
+
+/* ---- Canvas / 3D ---- */
+body.mobile #coord-display { display: none !important; }
+
+body.mobile #geo-hud {
+    transform: scale(0.8);
+    transform-origin: top right;
+}
+
+body.mobile #constellation-hud {
+    bottom: 0 !important;
+}
+
+body.mobile #view-controls {
+    bottom: 8px !important;
+    left: 8px !important;
+}
+
+/* ---- Modais: full-screen no mobile ---- */
+body.mobile .modal-overlay.active {
+    align-items: stretch !important;
+}
+
+body.mobile .modal {
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 100% !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+}
+
+body.mobile .modal-large {
+    max-width: 100% !important;
+    width: 100% !important;
+}
+
+body.mobile .modal-body {
+    max-height: none !important;
+    overflow-y: auto;
+    flex: 1;
+}
+
+/* Form grids empilhados */
+body.mobile .form-row,
+body.mobile .obs-position-grid,
+body.mobile .obs-time-grid,
+body.mobile .checkbox-grid,
+body.mobile .filters-grid,
+body.mobile .form-grid {
+    grid-template-columns: 1fr !important;
+}
+
+/* ---- Panel headers no drawer ---- */
+body.mobile .panel-header {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--window-dark);
+}
+
+/* ================================================================
+   2. TABLET — body.tablet OU viewport 768px–1023px
+   ================================================================ */
+
+/* Paineis mais estreitos */
+body.tablet #app {
+    --left-panel-width: 220px !important;
+    --right-panel-width: 240px !important;
+}
+
+/* Toolbar compacta */
+body.tablet .toolbar-btn {
+    min-width: 40px;
+    font-size: 10px;
+    padding: 3px;
+}
+body.tablet .toolbar-btn .icon {
+    width: 20px;
+    height: 20px;
+}
+
+/* Titlebar compacto */
+body.tablet #titlebar {
+    padding: 0 12px;
+}
+body.tablet #titlebar .version { display: none; }
+
+/* Inputs — prevenir zoom */
+body.tablet input,
+body.tablet select,
+body.tablet textarea {
+    font-size: 16px !important;
+}
+
+/* ================================================================
+   3. DESKTOP-ONLY OVERRIDES (esconder elementos mobile)
+   ================================================================ */
+
+/* Hamburger, bottom nav, drawer backdrop, menu overlay: escondidos sem classe mobile */
+.mobile-hamburger,
+.mobile-bottom-nav,
+#drawer-backdrop,
+#mobile-menu-overlay {
+    display: none;
+}
+
+/* ================================================================
+   4. MEDIA QUERY FALLBACKS — responsividade mesmo sem JS
+   ================================================================ */
+
+/* Tablet fallback: paineis mais estreitos quando JS nao setou body.tablet */
+@media (min-width: 768px) and (max-width: 1023px) {
+    #app {
+        --left-panel-width: 220px !important;
+        --right-panel-width: 240px !important;
+    }
+    .toolbar-btn {
+        min-width: 40px;
+        font-size: 10px;
+    }
+    .modal-body {
+        max-height: clamp(200px, 55vh, 420px);
+    }
+}
+
+/* Mobile fallback: esconder elementos desktop mesmo sem JS */
+@media (max-width: 767px) {
+    #menubar    { display: none !important; }
+    #toolbar    { display: none !important; }
+    #statusbar  { display: none !important; }
+    .resize-handle { display: none !important; }
+}
+
+/* ================================================================
+   SYMBOLOGY MODAL — Responsive overrides
+   Corrige overflow/truncation em viewports tablet e mobile.
+   ================================================================ */
+
+/* ---- Tablet: reduce fixed widths ---- */
+@media (max-width: 900px) {
+    .sym-sidebar { width: 160px; }
+    .sym-row-label { width: 110px; min-width: 80px; }
+    .sym-form-label { width: 120px; min-width: 80px; }
+    .sym-rule-name  { width: 90px; }
+    .sym-rule-param { width: 80px; }
+    .sym-rule-family { width: 70px; }
+}
+
+/* ---- Mobile: stack sidebar above content ---- */
+@media (max-width: 600px) {
+    .sym-body { flex-direction: column; }
+    .sym-sidebar {
+        width: 100%;
+        max-height: 120px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color, #2d3144);
+    }
+    .sym-profile-list {
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        gap: 4px;
+        padding: 4px;
+    }
+    .sym-profile-item { flex-shrink: 0; white-space: nowrap; }
+    .sym-row-label,
+    .sym-form-label {
+        width: auto;
+        min-width: 60px;
+        max-width: 100px;
+        overflow-wrap: break-word;
+        white-space: normal;
+    }
+    .sym-style-row { flex-wrap: wrap; }
+    .sym-rule-name,
+    .sym-rule-family,
+    .sym-rule-param,
+    .sym-rule-op,
+    .sym-rule-val {
+        width: auto;
+        min-width: 50px;
+        flex: 1;
+    }
+}
+
+/* ================================================================
+   SYMBOLOGY MODAL — Responsive fixes (Bug 1: overflow on tablet/desktop)
+   ================================================================ */
+
+@media (max-width: 900px) {
+    /* Sidebar mais estreita em viewports menores */
+    .sym-sidebar {
+        width: 150px;
+        min-width: 0;
+    }
+
+    /* Itens da lista com texto truncado */
+    .sym-profile-item span,
+    .sym-profile-name {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 110px;
+    }
+}
+
+@media (max-width: 600px) {
+    /* No mobile: sidebar colapsa para largura mínima */
+    .sym-body {
+        flex-direction: column;
+    }
+
+    .sym-sidebar {
+        width: 100%;
+        max-height: 120px;
+        border-right: none;
+        border-bottom: 1px solid var(--border-color, #2d3144);
+    }
+
+    .sym-profile-list {
+        max-height: 80px;
+    }
+}

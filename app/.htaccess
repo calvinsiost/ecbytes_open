@@ -1,0 +1,53 @@
+# ecbyts — Apache config
+DirectoryIndex index.html
+Options -Indexes
+
+# MIME types for ES modules and WASM (required for HiGHS/ONNX solvers)
+AddType application/javascript .js .mjs
+AddType application/wasm .wasm
+
+# Cache strategy:
+# - HTML: always revalidate (entry point must be fresh)
+# - JS/CSS: always revalidate (ETag-based, 304 if unchanged)
+# - Images/fonts: long cache (rarely change)
+<IfModule mod_expires.c>
+  ExpiresActive On
+  ExpiresByType text/html "access plus 0 seconds"
+  ExpiresByType text/css "access plus 0 seconds"
+  ExpiresByType application/javascript "access plus 0 seconds"
+  ExpiresByType image/png "access plus 1 month"
+  ExpiresByType image/jpeg "access plus 1 month"
+  ExpiresByType image/svg+xml "access plus 1 month"
+  ExpiresByType font/woff2 "access plus 1 year"
+  ExpiresByType font/woff "access plus 1 year"
+</IfModule>
+
+# Cache-Control headers (fallback if mod_expires not available)
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html)$">
+    Header set Cache-Control "no-cache, no-store, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "\.(js|mjs|css)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+  <FilesMatch "\.(onnx|onnx_data)$">
+    Header set Cache-Control "public, max-age=2592000, immutable"
+  </FilesMatch>
+</IfModule>
+
+# Security headers
+<IfModule mod_headers.c>
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Permissions-Policy "camera=(), microphone=()"
+
+  # F05a — Content Security Policy (permissivo: unsafe-inline necessario para 327 onclick handlers)
+  # Protege connect-src (exfiltracao), object-src (plugins), frame-ancestors (clickjacking)
+  Header set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://cdnjs.cloudflare.com https://unpkg.com https://esm.sh https://esm.run; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://esm.sh https://unpkg.com https://api.open-meteo.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.maptiler.com https://s3.amazonaws.com https://tiles.maps.eox.at https://tile.openfreemap.org; worker-src 'self' blob:; child-src 'self' blob:; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+</IfModule>
+
+# Gzip compression (reduz tamanho das respostas)
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript application/json image/svg+xml
+</IfModule>

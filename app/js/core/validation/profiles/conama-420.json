@@ -1,0 +1,32 @@
+{
+  "id": "conama-420",
+  "name": "CONAMA 420/2009",
+  "version": "1.0",
+  "jurisdiction": "BR",
+  "matrices": ["groundwater", "soil"],
+  "rules": [
+    {
+      "ruleId": "conama-001",
+      "type": "threshold",
+      "casNumber": "71-43-2",
+      "matrix": "groundwater",
+      "thresholds": [
+        { "type": "vi", "value": 5, "unit": "ug_L", "severity": "intervention" }
+      ]
+    },
+    {
+      "ruleId": "conama-002",
+      "type": "threshold",
+      "casNumber": "108-88-3",
+      "matrix": "groundwater",
+      "thresholds": [
+        { "type": "vi", "value": 700, "unit": "ug_L", "severity": "intervention" }
+      ]
+    },
+    {
+      "ruleId": "conama-003",
+      "type": "required_field",
+      "field": "parameterId"
+    }
+  ]
+}

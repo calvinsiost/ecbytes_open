@@ -1,0 +1,110 @@
+/* ================================================================
+   ASYNC DIALOGS — Non-blocking prompt/confirm modals
+   Substitui os dialogos nativos do navegador.
+   ================================================================ */
+
+.async-dialog-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+}
+
+.async-dialog {
+    background: var(--window-bg, #1e2128);
+    border: 1px solid var(--window-border, rgba(255, 255, 255, 0.1));
+    border-radius: var(--radius-xl);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    min-width: 320px;
+    max-width: 480px;
+    padding: 20px 24px;
+    color: var(--window-text, #e0e0e0);
+    font-size: 14px;
+}
+
+.async-dialog-message {
+    margin: 0 0 16px;
+    line-height: 1.5;
+    word-break: break-word;
+}
+
+.async-dialog-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--window-border, rgba(255, 255, 255, 0.15));
+    border-radius: var(--radius-md);
+    background: var(--window-input-bg, rgba(0, 0, 0, 0.3));
+    color: var(--window-text, #e0e0e0);
+    font-size: 14px;
+    font-family: inherit;
+    outline: none;
+    margin-bottom: 16px;
+    box-sizing: border-box;
+}
+
+.async-dialog-input:focus {
+    border-color: var(--primary-500, #4a8a9a);
+    box-shadow: 0 0 0 2px rgba(74, 138, 154, 0.25);
+}
+
+.async-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.async-dialog-btn {
+    padding: 8px 20px;
+    border: 1px solid var(--window-border, rgba(255, 255, 255, 0.15));
+    border-radius: var(--radius-lg);
+    font-size: 13px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.async-dialog-btn--cancel {
+    background: transparent;
+    color: var(--window-text-muted, #aaa);
+}
+
+.async-dialog-btn--cancel:hover {
+    background: var(--window-hover, rgba(255, 255, 255, 0.06));
+    color: var(--window-text, #e0e0e0);
+}
+
+.async-dialog-btn--confirm {
+    background: var(--primary-600, #3b6b7a);
+    border-color: var(--primary-500, #4a8a9a);
+    color: #fff;
+}
+
+.async-dialog-btn--confirm:hover {
+    background: var(--primary-500, #4a8a9a);
+}
+
+.async-dialog-btn--danger {
+    background: var(--error, #ef4444);
+    border-color: var(--error, #ef4444);
+}
+
+.async-dialog-btn--danger:hover {
+    background: #dc2626;
+}
+
+/* Light theme */
+[data-theme="light"] .async-dialog {
+    background: #fff;
+    border-color: rgba(0, 0, 0, 0.12);
+    color: #1a1a1a;
+}
+
+[data-theme="light"] .async-dialog-input {
+    background: #f5f5f5;
+    border-color: rgba(0, 0, 0, 0.15);
+    color: #1a1a1a;
+}

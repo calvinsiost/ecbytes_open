@@ -1,0 +1,32 @@
+{
+    "public": "app",
+    "headers": [
+        {
+            "source": "**/*.js",
+            "headers": [
+                { "key": "Content-Type", "value": "application/javascript; charset=utf-8" },
+                { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+            ]
+        },
+        {
+            "source": "**/*.html",
+            "headers": [
+                { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" },
+                {
+                    "key": "Content-Security-Policy",
+                    "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net https://cdn.sheetjs.com https://cdnjs.cloudflare.com https://unpkg.com https://esm.sh https://esm.run; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; connect-src 'self' data: https://*.supabase.co wss://*.supabase.co wss://localhost:4000 https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://esm.sh https://unpkg.com https://api.open-meteo.com https://api.anthropic.com https://api.openai.com https://generativelanguage.googleapis.com https://api.deepseek.com https://api.groq.com; img-src 'self' data: blob: https://*.tile.openstreetmap.org https://*.maptiler.com https://s3.amazonaws.com https://tiles.maps.eox.at https://tile.openfreemap.org; worker-src 'self' blob: 'wasm-unsafe-eval'; child-src 'self' blob:; font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://unpkg.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'"
+                },
+                { "key": "X-Content-Type-Options", "value": "nosniff" },
+                { "key": "X-Frame-Options", "value": "SAMEORIGIN" }
+            ]
+        },
+        {
+            "source": "**/*.css",
+            "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+        },
+        {
+            "source": "**/*.json",
+            "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }]
+        }
+    ]
+}

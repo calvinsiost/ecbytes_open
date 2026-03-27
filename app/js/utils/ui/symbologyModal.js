@@ -1,0 +1,1359 @@
+// This file is part of ecbyts/ECBT (Environmental & Occupational Core Byte Tools).
+// Copyright (C) 2026 Calvin Stefan Iost
+// Licensed under the GNU Affero General Public License v3.0 (AGPL-3.0-only).
+// See LICENSE file or https://www.gnu.org/licenses/agpl-3.0.txt
+//
+// Project: ECBT (Environmental & Occupational Core Byte Tools)
+// Version: 0.1-beta
+// Architecture: Digital Twin Architecture (Blockchain + ML + LLM)
+// Application: EHS & Mining
+// Authorship: Calvin Stefan Iost
+// Copyright (c) 2026 Calvin Stefan Iost
+
+/* ================================================================
+   ECBT ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Symbology Editor Modal
+   utils/ui/symbologyModal.js
+
+   Editor modal de perfis de simbologia. Usa createElement (sem
+   innerHTML monolÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­tico). Cada seÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â© uma funÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o que retorna um
+   elemento DOM isolado.
+   LicenÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§a: MPL 2.0
+   ================================================================ */
+
+import {
+    getProfiles,
+    getActiveIndex,
+    getActiveProfile,
+    createProfile,
+    deleteProfile,
+    duplicateProfile,
+    renameProfile,
+    applyProfile,
+    openDraft,
+    getDraft,
+    updateDraft,
+    previewDraft,
+    commitDraft,
+    discardDraft,
+} from '../../core/symbology/manager.js';
+import { getEnabledFamilies, getFamilyName } from '../../core/elements/families.js';
+import { getAllElements } from '../../core/elements/manager.js';
+import { getAllLayers } from '../../core/interpolation/manager.js';
+import { showToast } from './toast.js';
+
+// ----------------------------------------------------------------
+// ESTADO DO MODAL
+// ----------------------------------------------------------------
+
+let _modalRoot = null;
+let _currentProfileId = null;
+let _symbologyChangedListener = null;
+let _symIdCounter = 0;
+
+// ----------------------------------------------------------------
+// API PÃƒÆ’Ã†â€™Ãƒâ€¦Ã‚Â¡BLICA
+// ----------------------------------------------------------------
+
+/**
+ * Abre o editor de simbologia.
+ * Se um perfil estiver ativo, abre diretamente para ele.
+ * Caso contrÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡rio, mostra lista de perfis.
+ */
+export function openSymbologyEditor() {
+    if (_modalRoot && document.getElementById('symbology-modal')) {
+        return; // JÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ aberto
+    }
+    _modalRoot = document.getElementById('symbology-modal-root');
+    if (!_modalRoot) {
+        _modalRoot = document.createElement('div');
+        _modalRoot.id = 'symbology-modal-root';
+        document.body.appendChild(_modalRoot);
+    }
+
+    const activeProfile = getActiveProfile();
+    _currentProfileId = activeProfile?.id ?? null;
+
+    if (_currentProfileId) {
+        openDraft(_currentProfileId);
+    }
+
+    _modalRoot.innerHTML = '';
+    _modalRoot.appendChild(_buildModal());
+
+    // Escuta mudanÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§a externa de perfil (ciclo com editor aberto)
+    _symbologyChangedListener = ({ detail }) => {
+        const listEl = document.getElementById('sym-profile-list');
+        if (listEl) {
+            listEl.replaceWith(_renderProfileList());
+        }
+    };
+    window.addEventListener('symbologyChanged', _symbologyChangedListener);
+}
+
+/**
+ * Fecha o editor e descarta o draft.
+ */
+export function closeSymbologyEditor() {
+    if (_symbologyChangedListener) {
+        window.removeEventListener('symbologyChanged', _symbologyChangedListener);
+        _symbologyChangedListener = null;
+    }
+    if (_currentProfileId) {
+        discardDraft();
+    }
+    _currentProfileId = null;
+    if (_modalRoot) _modalRoot.innerHTML = '';
+}
+
+// ----------------------------------------------------------------
+// CONSTRUÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢O DO MODAL
+// ----------------------------------------------------------------
+
+function _buildModal() {
+    const overlay = document.createElement('div');
+    overlay.id = 'symbology-modal';
+    overlay.className = 'sym-overlay';
+
+    const dialog = document.createElement('div');
+    dialog.className = 'sym-dialog';
+
+    // CabeÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§alho
+    const header = document.createElement('div');
+    header.className = 'sym-header';
+    const title = document.createElement('h2');
+    title.className = 'sym-title';
+    title.textContent = 'Perfis de Simbologia';
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.className = 'sym-close-btn';
+    closeBtn.innerHTML = '&#10005;';
+    closeBtn.title = 'Fechar';
+    closeBtn.onclick = closeSymbologyEditor;
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+
+    // Corpo
+    const body = document.createElement('div');
+    body.className = 'sym-body';
+
+    // Painel esquerdo: lista de perfis
+    const sidebar = document.createElement('div');
+    sidebar.className = 'sym-sidebar';
+    sidebar.appendChild(_renderProfileList());
+    sidebar.appendChild(_renderNewProfileBtn());
+
+    // Painel direito: editor do perfil selecionado
+    const content = document.createElement('div');
+    content.id = 'sym-content';
+    content.className = 'sym-content';
+    content.appendChild(_currentProfileId ? _renderProfileEditor() : _renderEmptyState());
+
+    body.appendChild(sidebar);
+    body.appendChild(content);
+
+    // RodapÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©
+    const footer = _renderFooter();
+
+    dialog.appendChild(header);
+    dialog.appendChild(body);
+    dialog.appendChild(footer);
+    overlay.appendChild(dialog);
+
+    // Fecha ao clicar fora do dialog
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeSymbologyEditor();
+    });
+
+    return overlay;
+}
+
+// ----------------------------------------------------------------
+// LISTA DE PERFIS (sidebar)
+// ----------------------------------------------------------------
+
+function _renderProfileList() {
+    const profiles = getProfiles();
+    const activeIdx = getActiveIndex();
+
+    const container = document.createElement('ul');
+    container.id = 'sym-profile-list';
+    container.className = 'sym-profile-list';
+
+    if (profiles.length === 0) {
+        const empty = document.createElement('li');
+        empty.className = 'sym-profile-empty';
+        empty.textContent = 'Nenhum perfil criado.';
+        container.appendChild(empty);
+        return container;
+    }
+
+    profiles.forEach((p, idx) => {
+        const item = document.createElement('li');
+        item.className =
+            'sym-profile-item' +
+            (p.id === _currentProfileId ? ' sym-profile-item--selected' : '') +
+            (idx === activeIdx ? ' sym-profile-item--active' : '');
+
+        const nameBtn = document.createElement('button');
+        nameBtn.type = 'button';
+        nameBtn.className = 'sym-profile-name';
+        nameBtn.textContent = p.name;
+        nameBtn.title = p.name;
+        nameBtn.onclick = () => _selectProfile(p.id);
+
+        const actions = document.createElement('div');
+        actions.className = 'sym-profile-actions';
+
+        // Aplicar
+        const applyBtn = _mkIconBtn('&#9654;', 'Aplicar perfil', () => {
+            applyProfile(p.id);
+            showToast('Perfil "' + p.name + '" aplicado.', 'success');
+        });
+
+        // Duplicar
+        const dupBtn = _mkIconBtn('&#10063;', 'Duplicar', () => {
+            duplicateProfile(p.id);
+            _refreshSidebar();
+        });
+
+        // Excluir
+        const delBtn = _mkIconBtn('&#10005;', 'Excluir', () => {
+            if (!confirm('Excluir perfil "' + p.name + '"?')) return;
+            if (_currentProfileId === p.id) {
+                _currentProfileId = null;
+                _refreshContent(_renderEmptyState());
+            }
+            deleteProfile(p.id);
+            _refreshSidebar();
+        });
+
+        actions.appendChild(applyBtn);
+        actions.appendChild(dupBtn);
+        actions.appendChild(delBtn);
+        item.appendChild(nameBtn);
+        item.appendChild(actions);
+        container.appendChild(item);
+    });
+
+    return container;
+}
+
+function _renderNewProfileBtn() {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'sym-new-profile-btn';
+    btn.innerHTML = '&#43; Novo perfil';
+    btn.onclick = () => {
+        const name = prompt('Nome do novo perfil:');
+        if (!name?.trim()) return;
+        const p = createProfile(name.trim());
+        _selectProfile(p.id);
+        _refreshSidebar();
+    };
+    return btn;
+}
+
+// ----------------------------------------------------------------
+// EDITOR DO PERFIL (painel direito)
+// ----------------------------------------------------------------
+
+function _renderProfileEditor() {
+    const draft = getDraft();
+    if (!draft) return _renderEmptyState();
+
+    const container = document.createElement('div');
+    container.className = 'sym-editor';
+
+    // Nome do perfil (editÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡vel inline)
+    const nameRow = document.createElement('div');
+    nameRow.className = 'sym-editor-namerow';
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.id = 'symbology-profile-name';
+    nameInput.className = 'sym-name-input';
+    nameInput.value = draft.name;
+    nameInput.placeholder = 'Nome do perfil';
+    nameInput.setAttribute('aria-label', 'Profile name');
+    nameInput.onchange = () => {
+        updateDraft({ name: nameInput.value.trim() || draft.name });
+    };
+    nameRow.appendChild(nameInput);
+    container.appendChild(nameRow);
+
+    // Tabs de seÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âµes
+    const tabs = ['Elementos', 'Regras', 'Labels', 'SuperfÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­cies', 'Cena'];
+    const tabBar = document.createElement('div');
+    tabBar.className = 'sym-tab-bar';
+    const tabContent = document.createElement('div');
+    tabContent.className = 'sym-tab-content';
+
+    let activeTab = 0;
+
+    const renderTab = (idx) => {
+        tabBar.querySelectorAll('.sym-tab').forEach((t, i) => {
+            t.classList.toggle('sym-tab--active', i === idx);
+        });
+        tabContent.innerHTML = '';
+        switch (idx) {
+            case 0:
+                tabContent.appendChild(_renderElementSection(getDraft()));
+                break;
+            case 1:
+                tabContent.appendChild(_renderRulesSection(getDraft()));
+                break;
+            case 2:
+                tabContent.appendChild(_renderLabelsSection(getDraft()));
+                break;
+            case 3:
+                tabContent.appendChild(_renderSurfacesSection(getDraft()));
+                break;
+            case 4:
+                tabContent.appendChild(_renderSceneSection(getDraft()));
+                break;
+        }
+    };
+
+    tabs.forEach((label, idx) => {
+        const tab = document.createElement('button');
+        tab.type = 'button';
+        tab.className = 'sym-tab' + (idx === activeTab ? ' sym-tab--active' : '');
+        tab.textContent = label;
+        tab.onclick = () => {
+            activeTab = idx;
+            renderTab(idx);
+        };
+        tabBar.appendChild(tab);
+    });
+
+    renderTab(activeTab);
+    container.appendChild(tabBar);
+    container.appendChild(tabContent);
+
+    return container;
+}
+
+function _renderEmptyState() {
+    const el = document.createElement('div');
+    el.className = 'sym-empty-state';
+    el.textContent = 'Selecione ou crie um perfil para editar.';
+    return el;
+}
+
+// ----------------------------------------------------------------
+// SEÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢O ELEMENTOS
+// ----------------------------------------------------------------
+
+function _renderElementSection(draft) {
+    const container = document.createElement('div');
+    container.className = 'sym-section';
+
+    const help = document.createElement('p');
+    help.className = 'sym-help';
+    help.textContent = 'Configure estilo visual por famÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­lia ou por elemento individual.';
+    container.appendChild(help);
+
+    // Por famÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­lia
+    const famHeading = _mkHeading('Por FamÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­lia');
+    container.appendChild(famHeading);
+
+    const families = getEnabledFamilies()
+        .slice()
+        .sort((a, b) => getFamilyName(a).localeCompare(getFamilyName(b)));
+
+    families.forEach((famDef) => {
+        const fam = famDef.id;
+        container.appendChild(
+            _renderElementStyleRow(getFamilyName(famDef), draft.elements.byFamily[fam] || {}, (style) => {
+                if (!getDraft()) return;
+                getDraft().elements.byFamily[fam] = style;
+                updateDraft({ elements: getDraft().elements });
+            }),
+        );
+    });
+
+    // Por elemento individual
+    const elHeading = _mkHeading('Por Elemento Individual');
+    container.appendChild(elHeading);
+
+    const elements = getAllElements();
+    if (elements.length === 0) {
+        const msg = document.createElement('p');
+        msg.className = 'sym-help';
+        msg.textContent = 'Nenhum elemento no modelo.';
+        container.appendChild(msg);
+    } else {
+        elements.forEach((el) => {
+            const label = (el.data?.name || el.id) + ' (' + el.family + ')';
+            container.appendChild(
+                _renderElementStyleRow(label, draft.elements.byElement[el.id] || {}, (style) => {
+                    if (!getDraft()) return;
+                    getDraft().elements.byElement[el.id] = style;
+                    updateDraft({ elements: getDraft().elements });
+                }),
+            );
+        });
+    }
+
+    return container;
+}
+
+/**
+ * Renderiza uma linha de estilo de elemento (cor, opacidade, wireframe, escala, visÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­vel).
+ */
+function _renderElementStyleRow(label, style, onChange) {
+    const row = document.createElement('div');
+    row.className = 'sym-style-row';
+
+    const lbl = document.createElement('span');
+    lbl.className = 'sym-row-label';
+    lbl.textContent = label;
+
+    const controls = document.createElement('div');
+    controls.className = 'sym-row-controls';
+
+    // Cor
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.id = `symbology-elem-color-${_symIdCounter++}`;
+    colorInput.title = 'Cor';
+    colorInput.setAttribute('aria-label', 'Element color');
+    colorInput.value = style.color || '#4488ff';
+    colorInput.onchange = () => {
+        style.color = colorInput.value;
+        onChange({ ...style });
+    };
+
+    // Opacidade
+    const opacityInput = document.createElement('input');
+    opacityInput.type = 'range';
+    opacityInput.id = `symbology-elem-opacity-${_symIdCounter++}`;
+    opacityInput.min = '0';
+    opacityInput.max = '1';
+    opacityInput.step = '0.05';
+    opacityInput.title = 'Opacidade';
+    opacityInput.setAttribute('aria-label', 'Element opacity');
+    opacityInput.value = style.opacity !== undefined ? style.opacity : 1;
+    opacityInput.oninput = () => {
+        style.opacity = parseFloat(opacityInput.value);
+        onChange({ ...style });
+    };
+
+    // Wireframe
+    const wireCheck = document.createElement('input');
+    wireCheck.type = 'checkbox';
+    wireCheck.id = `symbology-elem-wire-${_symIdCounter++}`;
+    wireCheck.title = 'Wireframe';
+    wireCheck.setAttribute('aria-label', 'Wireframe');
+    wireCheck.checked = !!style.wireframe;
+    wireCheck.onchange = () => {
+        style.wireframe = wireCheck.checked;
+        onChange({ ...style });
+    };
+    const wireLabel = document.createElement('label');
+    wireLabel.className = 'sym-inline-label';
+    wireLabel.htmlFor = wireCheck.id;
+    wireLabel.appendChild(wireCheck);
+    wireLabel.appendChild(document.createTextNode(' Wire'));
+
+    // VisÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­vel
+    const visCheck = document.createElement('input');
+    visCheck.type = 'checkbox';
+    visCheck.id = `symbology-elem-vis-${_symIdCounter++}`;
+    visCheck.title = 'VisÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­vel';
+    visCheck.setAttribute('aria-label', 'Visible');
+    visCheck.checked = style.visible !== false;
+    visCheck.onchange = () => {
+        style.visible = visCheck.checked;
+        onChange({ ...style });
+    };
+    const visLabel = document.createElement('label');
+    visLabel.className = 'sym-inline-label';
+    visLabel.htmlFor = visCheck.id;
+    visLabel.appendChild(visCheck);
+    visLabel.appendChild(document.createTextNode(' VisÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­vel'));
+
+    // Escala
+    const scaleInput = document.createElement('input');
+    scaleInput.type = 'number';
+    scaleInput.id = `symbology-elem-scale-${_symIdCounter++}`;
+    scaleInput.min = '0.1';
+    scaleInput.max = '5';
+    scaleInput.step = '0.1';
+    scaleInput.title = 'Multiplicador de escala';
+    scaleInput.placeholder = 'Escala';
+    scaleInput.setAttribute('aria-label', 'Scale multiplier');
+    scaleInput.value = style.scaleMultiplier !== undefined ? style.scaleMultiplier : '';
+    scaleInput.className = 'sym-scale-input';
+    scaleInput.onchange = () => {
+        const val = parseFloat(scaleInput.value);
+        if (!isNaN(val)) style.scaleMultiplier = Math.max(0.1, Math.min(5, val));
+        else delete style.scaleMultiplier;
+        onChange({ ...style });
+    };
+
+    controls.appendChild(colorInput);
+    controls.appendChild(opacityInput);
+    controls.appendChild(wireLabel);
+    controls.appendChild(visLabel);
+    controls.appendChild(scaleInput);
+
+    row.appendChild(lbl);
+    row.appendChild(controls);
+    return row;
+}
+
+// ----------------------------------------------------------------
+// SEÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢O REGRAS
+// ----------------------------------------------------------------
+
+function _renderRulesSection(draft) {
+    const container = document.createElement('div');
+    container.className = 'sym-section';
+
+    const help = document.createElement('p');
+    help.className = 'sym-help';
+    help.textContent =
+        'Regras condicionais: aplica estilo quando parÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢metro satisfaz condiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o.';
+    container.appendChild(help);
+
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'sym-add-rule-btn';
+    addBtn.innerHTML = '&#43; Adicionar regra';
+    addBtn.onclick = () => {
+        const newRule = {
+            id: 'rule-' + Math.random().toString(36).slice(2, 8),
+            name: 'Nova regra',
+            match: { operator: '>', value: 0 },
+            style: {},
+        };
+        getDraft().rules.push(newRule);
+        updateDraft({ rules: getDraft().rules });
+        container.insertBefore(_renderRuleRow(newRule, draft), addBtn);
+    };
+
+    (draft.rules || []).forEach((rule) => {
+        container.appendChild(_renderRuleRow(rule, draft));
+    });
+
+    container.appendChild(addBtn);
+    return container;
+}
+
+function _renderRuleRow(rule, draft) {
+    const row = document.createElement('div');
+    row.className = 'sym-rule-row';
+    const commitRule = () => updateDraft({ rules: draft.rules });
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.id = `symbology-rule-name-${_symIdCounter++}`;
+    nameInput.placeholder = 'Nome';
+    nameInput.value = rule.name || '';
+    nameInput.className = 'sym-rule-name';
+    nameInput.setAttribute('aria-label', 'Rule name');
+    nameInput.onchange = () => {
+        rule.name = nameInput.value;
+        commitRule();
+    };
+
+    const famInput = document.createElement('input');
+    famInput.type = 'text';
+    famInput.id = `symbology-rule-family-${_symIdCounter++}`;
+    famInput.placeholder = 'Family (optional)';
+    famInput.value = rule.match.family || '';
+    famInput.className = 'sym-rule-family';
+    famInput.setAttribute('aria-label', 'Rule family filter');
+    famInput.onchange = () => {
+        rule.match.family = famInput.value.trim() || undefined;
+        commitRule();
+    };
+
+    const paramInput = document.createElement('input');
+    paramInput.type = 'text';
+    paramInput.id = `symbology-rule-param-${_symIdCounter++}`;
+    paramInput.placeholder = 'Parameter ID';
+    paramInput.value = rule.match.parameter || '';
+    paramInput.className = 'sym-rule-param';
+    paramInput.setAttribute('aria-label', 'Rule parameter ID');
+    paramInput.onchange = () => {
+        rule.match.parameter = paramInput.value.trim() || undefined;
+        commitRule();
+    };
+
+    const opSelect = document.createElement('select');
+    opSelect.id = `symbology-rule-op-${_symIdCounter++}`;
+    opSelect.className = 'sym-rule-op';
+    opSelect.setAttribute('aria-label', 'Rule operator');
+    [
+        ['>', '>'],
+        ['>=', '>='],
+        ['<', '<'],
+        ['<=', '<='],
+        ['=', '='],
+    ].forEach(([val, txt]) => {
+        const opt = document.createElement('option');
+        opt.value = val;
+        opt.textContent = txt;
+        if (rule.match.operator === val) opt.selected = true;
+        opSelect.appendChild(opt);
+    });
+    opSelect.onchange = () => {
+        rule.match.operator = opSelect.value;
+        commitRule();
+    };
+
+    const valInput = document.createElement('input');
+    valInput.type = 'number';
+    valInput.id = `symbology-rule-value-${_symIdCounter++}`;
+    valInput.placeholder = 'Value';
+    valInput.value = rule.match.value ?? '';
+    valInput.className = 'sym-rule-val';
+    valInput.setAttribute('aria-label', 'Rule threshold value');
+    valInput.onchange = () => {
+        const v = parseFloat(valInput.value);
+        rule.match.value = Number.isFinite(v) ? v : 0;
+        commitRule();
+    };
+
+    const colorInput = document.createElement('input');
+    colorInput.type = 'color';
+    colorInput.id = `symbology-rule-color-${_symIdCounter++}`;
+    colorInput.title = 'Rule color';
+    colorInput.setAttribute('aria-label', 'Rule color');
+    colorInput.value = rule.style?.color || '#ff0000';
+    colorInput.onchange = () => {
+        rule.style = { ...rule.style, color: colorInput.value };
+        commitRule();
+    };
+
+    const opacityInput = document.createElement('input');
+    opacityInput.type = 'range';
+    opacityInput.id = `symbology-rule-opacity-${_symIdCounter++}`;
+    opacityInput.min = '0';
+    opacityInput.max = '1';
+    opacityInput.step = '0.05';
+    opacityInput.title = 'Opacity';
+    opacityInput.setAttribute('aria-label', 'Rule opacity');
+    opacityInput.value = rule.style?.opacity ?? 1;
+    opacityInput.oninput = () => {
+        rule.style = { ...rule.style, opacity: parseFloat(opacityInput.value) };
+        commitRule();
+    };
+
+    const wireCheck = document.createElement('input');
+    wireCheck.type = 'checkbox';
+    wireCheck.id = `symbology-rule-wire-${_symIdCounter++}`;
+    wireCheck.setAttribute('aria-label', 'Rule wireframe');
+    wireCheck.checked = !!rule.style?.wireframe;
+    wireCheck.onchange = () => {
+        rule.style = { ...rule.style, wireframe: wireCheck.checked };
+        commitRule();
+    };
+
+    const visCheck = document.createElement('input');
+    visCheck.type = 'checkbox';
+    visCheck.id = `symbology-rule-vis-${_symIdCounter++}`;
+    visCheck.setAttribute('aria-label', 'Rule visible');
+    visCheck.checked = rule.style?.visible !== false;
+    visCheck.onchange = () => {
+        rule.style = { ...rule.style, visible: visCheck.checked };
+        commitRule();
+    };
+
+    const scaleInput = document.createElement('input');
+    scaleInput.type = 'number';
+    scaleInput.id = `symbology-rule-scale-${_symIdCounter++}`;
+    scaleInput.min = '0.1';
+    scaleInput.max = '5';
+    scaleInput.step = '0.1';
+    scaleInput.placeholder = 'Scale';
+    scaleInput.className = 'sym-rule-val';
+    scaleInput.setAttribute('aria-label', 'Rule scale multiplier');
+    scaleInput.value = rule.style?.scaleMultiplier ?? '';
+    scaleInput.onchange = () => {
+        const v = parseFloat(scaleInput.value);
+        if (Number.isFinite(v)) {
+            rule.style = { ...rule.style, scaleMultiplier: Math.max(0.1, Math.min(5, v)) };
+        } else {
+            const { scaleMultiplier, ...rest } = rule.style || {};
+            rule.style = rest;
+        }
+        commitRule();
+    };
+
+    const removeBtn = _mkIconBtn('&#10005;', 'Remover regra', () => {
+        const idx = draft.rules.indexOf(rule);
+        if (idx > -1) draft.rules.splice(idx, 1);
+        updateDraft({ rules: draft.rules });
+        row.remove();
+    });
+
+    row.appendChild(nameInput);
+    row.appendChild(famInput);
+    row.appendChild(paramInput);
+    row.appendChild(opSelect);
+    row.appendChild(valInput);
+    row.appendChild(colorInput);
+    row.appendChild(opacityInput);
+    row.appendChild(_mkInlineCheck('Wire', wireCheck));
+    row.appendChild(_mkInlineCheck('Visible', visCheck));
+    row.appendChild(scaleInput);
+    row.appendChild(removeBtn);
+    return row;
+}
+
+// ----------------------------------------------------------------
+// SEÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢O LABELS
+// ----------------------------------------------------------------
+
+function _renderLabelsSection(draft) {
+    const container = document.createElement('div');
+    container.className = 'sym-section';
+
+    const help = document.createElement('p');
+    help.className = 'sym-help';
+    help.textContent = 'Ajusta estilo de labels 3D por categoria.';
+    container.appendChild(help);
+
+    const categories = ['elementNames', 'observations', 'geology', 'modelTitle'];
+    categories.forEach((cat) => {
+        const catStyle = draft.labels?.categories?.[cat] || {};
+
+        const group = document.createElement('div');
+        group.className = 'sym-label-group';
+
+        const heading = _mkHeading(cat);
+        group.appendChild(heading);
+
+        group.appendChild(
+            _mkCheckRow('Habilitado', !!catStyle.enabled, (val) => {
+                _ensureLabelCat(draft, cat).enabled = val;
+                updateDraft({ labels: draft.labels });
+            }),
+        );
+
+        group.appendChild(
+            _mkNumberRow('Tamanho fonte', catStyle.fontSize || 12, 8, 36, (val) => {
+                _ensureLabelCat(draft, cat).fontSize = val;
+                updateDraft({ labels: draft.labels });
+            }),
+        );
+
+        group.appendChild(
+            _mkTextRow('Fonte', catStyle.fontFamily || '', (val) => {
+                _ensureLabelCat(draft, cat).fontFamily = val || undefined;
+                updateDraft({ labels: draft.labels });
+            }),
+        );
+
+        group.appendChild(
+            _mkNumberRow('Distancia maxima', catStyle.maxDistance ?? 0, 0, 100000, (val) => {
+                _ensureLabelCat(draft, cat).maxDistance = Number.isFinite(val) ? val : 0;
+                updateDraft({ labels: draft.labels });
+            }),
+        );
+
+        group.appendChild(
+            _mkColorRow('Cor', catStyle.color || '#ffffff', (val) => {
+                _ensureLabelCat(draft, cat).color = val;
+                updateDraft({ labels: draft.labels });
+            }),
+        );
+
+        group.appendChild(
+            _mkColorRow('Fundo', catStyle.background || '#000000', (val) => {
+                _ensureLabelCat(draft, cat).background = val;
+                updateDraft({ labels: draft.labels });
+            }),
+        );
+
+        if (cat === 'elementNames') {
+            group.appendChild(
+                _mkCheckRow('Mostrar familia', !!catStyle.showFamily, (val) => {
+                    _ensureLabelCat(draft, cat).showFamily = val;
+                    updateDraft({ labels: draft.labels });
+                }),
+            );
+        }
+        if (cat === 'observations') {
+            group.appendChild(
+                _mkCheckRow('Mostrar unidade', !!catStyle.showUnit, (val) => {
+                    _ensureLabelCat(draft, cat).showUnit = val;
+                    updateDraft({ labels: draft.labels });
+                }),
+            );
+            group.appendChild(
+                _mkCheckRow('Mostrar data', !!catStyle.showDate, (val) => {
+                    _ensureLabelCat(draft, cat).showDate = val;
+                    updateDraft({ labels: draft.labels });
+                }),
+            );
+        }
+
+        container.appendChild(group);
+    });
+
+    const perElementHeading = _mkHeading('Overrides por elemento');
+    container.appendChild(perElementHeading);
+    const elements = getAllElements();
+    if (elements.length === 0) {
+        container.appendChild(_mkHelpText('Nenhum elemento no modelo.'));
+    } else {
+        elements.forEach((el) => {
+            const row = document.createElement('div');
+            row.className = 'sym-form-row';
+            const label = document.createElement('span');
+            label.className = 'sym-form-label';
+            label.textContent = (el.data?.name || el.id) + ' (' + el.family + ')';
+
+            const pe = _ensurePerElementLabel(draft, el.id);
+            const nameCheck = document.createElement('input');
+            nameCheck.type = 'checkbox';
+            nameCheck.id = `symbology-label-name-${_symIdCounter++}`;
+            nameCheck.setAttribute('aria-label', 'Show name label');
+            nameCheck.checked = pe.nameLabel !== false;
+            nameCheck.onchange = () => {
+                _ensurePerElementLabel(draft, el.id).nameLabel = nameCheck.checked;
+                updateDraft({ labels: draft.labels });
+            };
+
+            const obsCheck = document.createElement('input');
+            obsCheck.type = 'checkbox';
+            obsCheck.id = `symbology-label-obs-${_symIdCounter++}`;
+            obsCheck.setAttribute('aria-label', 'Show observation label');
+            obsCheck.checked = pe.obsLabel !== false;
+            obsCheck.onchange = () => {
+                _ensurePerElementLabel(draft, el.id).obsLabel = obsCheck.checked;
+                updateDraft({ labels: draft.labels });
+            };
+
+            const right = document.createElement('div');
+            right.className = 'sym-row-controls';
+            right.appendChild(_mkInlineCheck('Nome', nameCheck));
+            right.appendChild(_mkInlineCheck('Obs', obsCheck));
+            row.appendChild(label);
+            row.appendChild(right);
+            container.appendChild(row);
+        });
+    }
+
+    return container;
+}
+
+function _ensureLabelCat(draft, cat) {
+    if (!draft.labels) draft.labels = { categories: {}, perElement: {} };
+    if (!draft.labels.categories) draft.labels.categories = {};
+    if (!draft.labels.categories[cat]) draft.labels.categories[cat] = {};
+    return draft.labels.categories[cat];
+}
+
+function _ensurePerElementLabel(draft, elementId) {
+    if (!draft.labels) draft.labels = { categories: {}, perElement: {} };
+    if (!draft.labels.perElement) draft.labels.perElement = {};
+    if (!draft.labels.perElement[elementId]) draft.labels.perElement[elementId] = {};
+    return draft.labels.perElement[elementId];
+}
+
+// ----------------------------------------------------------------
+// SEÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢O SUPERFÃƒÆ’Ã†â€™Ãƒâ€šÃ‚ÂCIES
+// ----------------------------------------------------------------
+
+function _renderSurfacesSection(draft) {
+    const container = document.createElement('div');
+    container.className = 'sym-section';
+
+    const help = document.createElement('p');
+    help.className = 'sym-help';
+    help.textContent = 'Configura estilo visual das superficies de interpolacao.';
+    container.appendChild(help);
+
+    let layers = [];
+    try {
+        layers = getAllLayers();
+    } catch (e) {
+        /* nenhuma superficie */
+    }
+
+    if (layers.length === 0) {
+        const msg = document.createElement('p');
+        msg.className = 'sym-help';
+        msg.textContent = 'Nenhuma superficie de interpolacao no modelo.';
+        container.appendChild(msg);
+        return container;
+    }
+
+    layers.forEach((layer) => {
+        const style = draft.surfaces?.byLayer?.[layer.id] || {};
+        const group = document.createElement('div');
+        group.className = 'sym-surface-group';
+
+        const heading = _mkHeading(layer.name || layer.id);
+        group.appendChild(heading);
+
+        group.appendChild(
+            _mkRangeRow('Opacidade', style.opacity ?? 1, 0, 1, 0.05, (val) => {
+                _ensureSurface(draft, layer.id).opacity = val;
+                updateDraft({ surfaces: draft.surfaces });
+            }),
+        );
+
+        group.appendChild(
+            _mkTextRow('Color Ramp', style.colorRamp || '', (val) => {
+                _ensureSurface(draft, layer.id).colorRamp = val || undefined;
+                updateDraft({ surfaces: draft.surfaces });
+            }),
+        );
+
+        group.appendChild(
+            _mkCheckRow('Wireframe', !!style.wireframe, (val) => {
+                _ensureSurface(draft, layer.id).wireframe = val;
+                updateDraft({ surfaces: draft.surfaces });
+            }),
+        );
+
+        group.appendChild(
+            _mkCheckRow('Visivel', style.visible !== false, (val) => {
+                _ensureSurface(draft, layer.id).visible = val;
+                updateDraft({ surfaces: draft.surfaces });
+            }),
+        );
+
+        group.appendChild(
+            _mkCheckRow('Mostrar contornos', !!style.showContours, (val) => {
+                _ensureSurface(draft, layer.id).showContours = val;
+                updateDraft({ surfaces: draft.surfaces });
+            }),
+        );
+
+        group.appendChild(
+            _mkCheckRow('Mostrar labels de contorno', !!style.showContourLabels, (val) => {
+                _ensureSurface(draft, layer.id).showContourLabels = val;
+                updateDraft({ surfaces: draft.surfaces });
+            }),
+        );
+
+        const densityRow = document.createElement('div');
+        densityRow.className = 'sym-form-row';
+        const densityLbl = document.createElement('span');
+        densityLbl.className = 'sym-form-label';
+        densityLbl.textContent = 'Densidade de contorno';
+        const densitySelect = document.createElement('select');
+        densitySelect.id = `symbology-contour-density-${_symIdCounter++}`;
+        densitySelect.setAttribute('aria-label', 'Contour density');
+        ['low', 'medium', 'high'].forEach((v) => {
+            const opt = document.createElement('option');
+            opt.value = v;
+            opt.textContent = v;
+            if ((style.contourDensity || 'medium') === v) opt.selected = true;
+            densitySelect.appendChild(opt);
+        });
+        densitySelect.onchange = () => {
+            _ensureSurface(draft, layer.id).contourDensity = densitySelect.value;
+            updateDraft({ surfaces: draft.surfaces });
+        };
+        densityRow.appendChild(densityLbl);
+        densityRow.appendChild(densitySelect);
+        group.appendChild(densityRow);
+
+        const bandsHeading = _mkHeading('Faixas de valor');
+        group.appendChild(bandsHeading);
+        group.appendChild(
+            _renderValueBandEditor(style.valueBands || [], (bands) => {
+                _ensureSurface(draft, layer.id).valueBands = bands;
+                updateDraft({ surfaces: draft.surfaces });
+            }),
+        );
+
+        container.appendChild(group);
+    });
+
+    return container;
+}
+
+function _ensureSurface(draft, layerId) {
+    if (!draft.surfaces) draft.surfaces = { byLayer: {} };
+    if (!draft.surfaces.byLayer) draft.surfaces.byLayer = {};
+    if (!draft.surfaces.byLayer[layerId]) draft.surfaces.byLayer[layerId] = {};
+    return draft.surfaces.byLayer[layerId];
+}
+
+function _renderValueBandEditor(bands, onChange) {
+    const container = document.createElement('div');
+    container.className = 'sym-bands';
+
+    const list = document.createElement('div');
+    list.className = 'sym-bands-list';
+
+    const refreshList = () => {
+        list.innerHTML = '';
+        bands.forEach((band, idx) => {
+            const row = document.createElement('div');
+            row.className = 'sym-band-row';
+
+            const maxInput = document.createElement('input');
+            maxInput.type = 'number';
+            maxInput.id = `symbology-band-max-${_symIdCounter++}`;
+            maxInput.setAttribute('aria-label', 'Band maximum value');
+            maxInput.placeholder = band.max === null ? '(catch-all)' : 'MÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ximo';
+            maxInput.value = band.max !== null ? band.max : '';
+            maxInput.className = 'sym-band-max';
+            maxInput.onchange = () => {
+                const v = parseFloat(maxInput.value);
+                bands[idx].max = isNaN(v) ? null : v;
+                onChange([...bands]);
+            };
+
+            const colorInput = document.createElement('input');
+            colorInput.type = 'color';
+            colorInput.id = `symbology-band-color-${_symIdCounter++}`;
+            colorInput.value = band.color || '#4488ff';
+            colorInput.title = 'Cor';
+            colorInput.setAttribute('aria-label', 'Band color');
+            colorInput.onchange = () => {
+                bands[idx].color = colorInput.value;
+                onChange([...bands]);
+            };
+
+            const labelInput = document.createElement('input');
+            labelInput.type = 'text';
+            labelInput.id = `symbology-band-label-${_symIdCounter++}`;
+            labelInput.placeholder = 'Label';
+            labelInput.value = band.label || '';
+            labelInput.className = 'sym-band-label';
+            labelInput.setAttribute('aria-label', 'Band label');
+            labelInput.onchange = () => {
+                bands[idx].label = labelInput.value;
+                onChange([...bands]);
+            };
+
+            const removeBtn = _mkIconBtn('&#10005;', 'Remover faixa', () => {
+                bands.splice(idx, 1);
+                onChange([...bands]);
+                refreshList();
+            });
+
+            row.appendChild(maxInput);
+            row.appendChild(colorInput);
+            row.appendChild(labelInput);
+            row.appendChild(removeBtn);
+            list.appendChild(row);
+        });
+    };
+    refreshList();
+
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'sym-add-band-btn';
+    addBtn.innerHTML = '&#43; Faixa';
+    addBtn.onclick = () => {
+        bands.push({ max: null, color: '#4488ff', label: '' });
+        onChange([...bands]);
+        refreshList();
+    };
+
+    container.appendChild(list);
+    container.appendChild(addBtn);
+    return container;
+}
+
+// ----------------------------------------------------------------
+// SEÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢O CENA
+// ----------------------------------------------------------------
+
+function _renderSceneSection(draft) {
+    const container = document.createElement('div');
+    container.className = 'sym-section';
+
+    const help = document.createElement('p');
+    help.className = 'sym-help';
+    help.textContent =
+        'Sobrescreve configuraÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âµes globais de cena durante este perfil.';
+    container.appendChild(help);
+
+    const scene = draft.scene || {};
+
+    const setScene = (key, val) => {
+        const current = getDraft();
+        if (!current) return;
+        if (!current.scene) current.scene = {};
+        current.scene[key] = val;
+        updateDraft({ scene: current.scene });
+    };
+
+    container.appendChild(_mkCheckRow('Wireframe global', !!scene.wireframe, (v) => setScene('wireframe', v)));
+
+    container.appendChild(
+        _mkRangeRow('Intensidade ambiental', scene.ambientIntensity ?? 0.5, 0, 2, 0.05, (v) =>
+            setScene('ambientIntensity', v),
+        ),
+    );
+
+    container.appendChild(
+        _mkRangeRow('Intensidade direcional', scene.directionalIntensity ?? 1, 0, 3, 0.1, (v) =>
+            setScene('directionalIntensity', v),
+        ),
+    );
+
+    container.appendChild(
+        _mkRangeRow('Exagero vertical', scene.verticalExaggeration ?? 1, 0.1, 10, 0.1, (v) =>
+            setScene('verticalExaggeration', v),
+        ),
+    );
+
+    container.appendChild(_mkCheckRow('Sombras', !!scene.shadows, (v) => setScene('shadows', v)));
+
+    container.appendChild(_mkColorRow('Fundo', scene.background || '#0d1117', (v) => setScene('background', v)));
+
+    const fog = scene.fog || {};
+    container.appendChild(
+        _mkCheckRow('Neblina', !!fog.enabled, (v) => {
+            const next = { ...fog, enabled: v };
+            setScene('fog', next);
+        }),
+    );
+    container.appendChild(
+        _mkNumberRow('Fog near', fog.near ?? 20, 0, 100000, (v) => {
+            const next = { ...fog, near: Number.isFinite(v) ? v : 20 };
+            setScene('fog', next);
+        }),
+    );
+    container.appendChild(
+        _mkNumberRow('Fog far', fog.far ?? 200, 1, 1000000, (v) => {
+            const near = Number.isFinite(fog.near) ? fog.near : 20;
+            const value = Number.isFinite(v) ? Math.max(v, near + 1) : 200;
+            const next = { ...fog, far: value };
+            setScene('fog', next);
+        }),
+    );
+
+    return container;
+}
+
+// ----------------------------------------------------------------
+// RODAPÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â°
+// ----------------------------------------------------------------
+
+function _renderFooter() {
+    const footer = document.createElement('div');
+    footer.className = 'sym-footer';
+
+    const previewBtn = document.createElement('button');
+    previewBtn.type = 'button';
+    previewBtn.className = 'sym-btn sym-btn--secondary';
+    previewBtn.textContent = 'Aplicar ao vivo';
+    previewBtn.title = 'Visualiza sem salvar. Fechar descarta.';
+    previewBtn.onclick = () => {
+        if (!_currentProfileId) return;
+        updateDraft({ name: _getNameInputValue() });
+        previewDraft();
+        showToast('Preview aplicado. Clique Salvar para confirmar.', 'info');
+    };
+
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'sym-btn sym-btn--primary';
+    saveBtn.textContent = 'Salvar';
+    saveBtn.onclick = () => {
+        if (!_currentProfileId) return;
+        updateDraft({ name: _getNameInputValue() });
+        commitDraft();
+        showToast('Perfil salvo.', 'success');
+        closeSymbologyEditor();
+    };
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'sym-btn sym-btn--ghost';
+    cancelBtn.textContent = 'Cancelar';
+    cancelBtn.onclick = closeSymbologyEditor;
+
+    footer.appendChild(cancelBtn);
+    footer.appendChild(previewBtn);
+    if (_currentProfileId) footer.appendChild(saveBtn);
+
+    return footer;
+}
+
+// ----------------------------------------------------------------
+// NAVEGAÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢O INTERNA
+// ----------------------------------------------------------------
+
+function _selectProfile(profileId) {
+    if (_currentProfileId && _currentProfileId !== profileId) {
+        discardDraft();
+    }
+    _currentProfileId = profileId;
+    openDraft(profileId);
+    _refreshContent(_renderProfileEditor());
+    _refreshSidebar();
+}
+
+function _refreshSidebar() {
+    const old = document.getElementById('sym-profile-list');
+    if (old) old.replaceWith(_renderProfileList());
+}
+
+function _refreshContent(el) {
+    const content = document.getElementById('sym-content');
+    if (content) {
+        content.innerHTML = '';
+        content.appendChild(el);
+    }
+}
+
+function _getNameInputValue() {
+    const input = document.querySelector('#sym-content .sym-name-input');
+    return input?.value?.trim() || getDraft()?.name || '';
+}
+
+// ----------------------------------------------------------------
+// HELPERS DOM
+// ----------------------------------------------------------------
+
+function _mkIconBtn(html, title, onClick) {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'sym-icon-btn';
+    btn.innerHTML = html;
+    btn.title = title;
+    btn.onclick = onClick;
+    return btn;
+}
+
+function _mkHeading(text) {
+    const h = document.createElement('h4');
+    h.className = 'sym-section-heading';
+    h.textContent = text;
+    return h;
+}
+
+function _mkCheckRow(label, checked, onChange, id) {
+    const row = document.createElement('div');
+    row.className = 'sym-form-row';
+    const lbl = document.createElement('label');
+    lbl.className = 'sym-form-label';
+    const chk = document.createElement('input');
+    chk.type = 'checkbox';
+    chk.id = id || `symbology-chk-${_symIdCounter++}`;
+    chk.setAttribute('aria-label', label);
+    chk.checked = checked;
+    chk.onchange = () => onChange(chk.checked);
+    lbl.htmlFor = chk.id;
+    lbl.appendChild(chk);
+    lbl.appendChild(document.createTextNode(' ' + label));
+    row.appendChild(lbl);
+    return row;
+}
+
+function _mkInlineCheck(label, input) {
+    if (!input.id) {
+        input.id = `symbology-ichk-${_symIdCounter++}`;
+    }
+    if (!input.getAttribute('aria-label')) {
+        input.setAttribute('aria-label', label);
+    }
+    const wrap = document.createElement('label');
+    wrap.className = 'sym-inline-check';
+    wrap.htmlFor = input.id;
+    wrap.appendChild(input);
+    wrap.appendChild(document.createTextNode(' ' + label));
+    return wrap;
+}
+
+function _mkNumberRow(label, value, min, max, onChange, id) {
+    const row = document.createElement('div');
+    row.className = 'sym-form-row';
+    const lbl = document.createElement('label');
+    lbl.className = 'sym-form-label';
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.id = id || `symbology-num-${_symIdCounter++}`;
+    input.min = min;
+    input.max = max;
+    input.value = value;
+    input.className = 'sym-number-input';
+    input.setAttribute('aria-label', label);
+    input.onchange = () => onChange(parseFloat(input.value));
+    lbl.htmlFor = input.id;
+    lbl.textContent = label;
+    row.appendChild(lbl);
+    row.appendChild(input);
+    return row;
+}
+
+function _mkTextRow(label, value, onChange, id) {
+    const row = document.createElement('div');
+    row.className = 'sym-form-row';
+    const lbl = document.createElement('label');
+    lbl.className = 'sym-form-label';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.id = id || `symbology-txt-${_symIdCounter++}`;
+    input.value = value || '';
+    input.className = 'sym-text-input';
+    input.setAttribute('aria-label', label);
+    input.onchange = () => onChange(input.value.trim());
+    lbl.htmlFor = input.id;
+    lbl.textContent = label;
+    row.appendChild(lbl);
+    row.appendChild(input);
+    return row;
+}
+
+function _mkHelpText(text) {
+    const p = document.createElement('p');
+    p.className = 'sym-help';
+    p.textContent = text;
+    return p;
+}
+
+function _mkColorRow(label, value, onChange, id) {
+    const row = document.createElement('div');
+    row.className = 'sym-form-row';
+    const lbl = document.createElement('label');
+    lbl.className = 'sym-form-label';
+    const input = document.createElement('input');
+    input.type = 'color';
+    input.id = id || `symbology-clr-${_symIdCounter++}`;
+    input.value = value;
+    input.setAttribute('aria-label', label);
+    input.onchange = () => onChange(input.value);
+    lbl.htmlFor = input.id;
+    lbl.textContent = label;
+    row.appendChild(lbl);
+    row.appendChild(input);
+    return row;
+}
+
+function _mkRangeRow(label, value, min, max, step, onChange, id) {
+    const row = document.createElement('div');
+    row.className = 'sym-form-row';
+    const lbl = document.createElement('label');
+    lbl.className = 'sym-form-label';
+    const rangeWrap = document.createElement('div');
+    rangeWrap.className = 'sym-range-wrap';
+    const input = document.createElement('input');
+    input.type = 'range';
+    input.id = id || `symbology-rng-${_symIdCounter++}`;
+    input.min = min;
+    input.max = max;
+    input.step = step;
+    input.value = value;
+    input.setAttribute('aria-label', label);
+    lbl.htmlFor = input.id;
+    lbl.textContent = label;
+    const display = document.createElement('span');
+    display.className = 'sym-range-val';
+    display.textContent = value;
+    input.oninput = () => {
+        const v = parseFloat(input.value);
+        display.textContent = v.toFixed(2);
+        onChange(v);
+    };
+    rangeWrap.appendChild(input);
+    rangeWrap.appendChild(display);
+    row.appendChild(lbl);
+    row.appendChild(rangeWrap);
+    return row;
+}

@@ -1,0 +1,1444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ecbyts API Reference</title>
+<style>
+/* ================================================================
+   API DOCS — Dark-themed interactive documentation
+   Pagina de documentacao interativa da API de automacao
+   ================================================================ */
+
+:root {
+    --bg-primary: #0f1117;
+    --bg-secondary: #161822;
+    --bg-card: #1c1e2b;
+    --bg-code: #12131c;
+    --border: #2a2d3e;
+    --text-primary: #e1e4ed;
+    --text-secondary: #8b8fa3;
+    --text-muted: #5c6070;
+    --accent: #6c8aff;
+    --accent-hover: #8ba3ff;
+    --get: #49cc90;
+    --post: #61affe;
+    --patch: #fca130;
+    --delete: #f93e3e;
+    --ws: #9b59b6;
+    --radius: 8px;
+    --sidebar-w: 260px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    line-height: 1.6;
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ---- Sidebar ---- */
+
+.sidebar {
+    width: var(--sidebar-w);
+    background: var(--bg-secondary);
+    border-right: 1px solid var(--border);
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    overflow-y: auto;
+    z-index: 10;
+    padding: 20px 0;
+}
+
+.sidebar h1 {
+    font-size: 16px;
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.sidebar .status {
+    padding: 10px 20px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f93e3e;
+}
+
+.status-dot.connected { background: var(--get); }
+
+.sidebar nav { padding: 10px 0; }
+
+.sidebar nav a {
+    display: block;
+    padding: 6px 20px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    transition: all 0.15s;
+}
+
+.sidebar nav a:hover, .sidebar nav a.active {
+    color: var(--text-primary);
+    background: rgba(108, 138, 255, 0.08);
+}
+
+.sidebar nav .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    padding: 16px 20px 4px;
+    font-weight: 600;
+}
+
+/* ---- Main Content ---- */
+
+.main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    padding: 40px;
+    max-width: 960px;
+}
+
+.main h2 {
+    font-size: 24px;
+    margin: 40px 0 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-primary);
+}
+
+.main h2:first-of-type { margin-top: 0; }
+
+.main h3 {
+    font-size: 16px;
+    margin: 24px 0 8px;
+    color: var(--text-secondary);
+}
+
+.main p, .main li {
+    color: var(--text-secondary);
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.main ul { padding-left: 20px; }
+
+/* ---- Endpoint Card ---- */
+
+.endpoint {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin: 12px 0;
+    overflow: hidden;
+}
+
+.endpoint-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s;
+}
+
+.endpoint-header:hover { background: rgba(255,255,255,0.02); }
+
+.method-badge {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    min-width: 56px;
+    text-align: center;
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+}
+
+.method-badge.get    { background: rgba(73,204,144,0.15); color: var(--get); }
+.method-badge.post   { background: rgba(97,175,254,0.15); color: var(--post); }
+.method-badge.patch  { background: rgba(252,161,48,0.15); color: var(--patch); }
+.method-badge.delete { background: rgba(249,62,62,0.15);  color: var(--delete); }
+.method-badge.ws     { background: rgba(155,89,182,0.15); color: var(--ws); }
+
+.endpoint-path {
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.endpoint-desc {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.endpoint-chevron {
+    color: var(--text-muted);
+    font-size: 12px;
+    transition: transform 0.2s;
+}
+
+.endpoint.open .endpoint-chevron { transform: rotate(90deg); }
+
+.endpoint-body {
+    display: none;
+    padding: 16px;
+    border-top: 1px solid var(--border);
+    background: var(--bg-primary);
+}
+
+.endpoint.open .endpoint-body { display: block; }
+
+.endpoint-body p { margin-bottom: 12px; }
+
+.endpoint-body h4 {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin: 16px 0 8px;
+}
+
+.endpoint-body h4:first-child { margin-top: 0; }
+
+/* ---- Code Block ---- */
+
+pre {
+    background: var(--bg-code);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 16px;
+    overflow-x: auto;
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--text-primary);
+    position: relative;
+    margin: 8px 0;
+}
+
+pre .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: 3px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+pre:hover .copy-btn { opacity: 1; }
+pre .copy-btn:hover { color: var(--text-primary); }
+
+.code-kw { color: #c678dd; }
+.code-str { color: #98c379; }
+.code-num { color: #d19a66; }
+.code-comment { color: #5c6370; font-style: italic; }
+
+/* ---- Search ---- */
+
+.search-box {
+    position: sticky;
+    top: 0;
+    background: var(--bg-primary);
+    padding: 16px 0 20px;
+    z-index: 5;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 10px 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.search-box input:focus { border-color: var(--accent); }
+.search-box input::placeholder { color: var(--text-muted); }
+
+/* ---- Actions Table ---- */
+
+.actions-grid {
+    display: grid;
+    gap: 8px;
+}
+
+.action-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+}
+
+.action-name {
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    white-space: nowrap;
+}
+
+.action-params {
+    font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.action-cat {
+    margin-left: auto;
+    font-size: 11px;
+    background: rgba(108,138,255,0.1);
+    color: var(--accent);
+    padding: 2px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+/* ---- Category Tab Filters ---- */
+
+.cat-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 12px 0;
+}
+
+.cat-filter {
+    padding: 4px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.cat-filter:hover { border-color: var(--accent); color: var(--text-primary); }
+.cat-filter.active { background: rgba(108,138,255,0.15); border-color: var(--accent); color: var(--accent); }
+
+/* ---- Table ---- */
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0;
+    font-size: 13px;
+}
+
+th {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 2px solid var(--border);
+    color: var(--text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+td {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+}
+
+td code {
+    font-size: 12px;
+    background: var(--bg-code);
+    padding: 2px 6px;
+    border-radius: 3px;
+    color: var(--text-primary);
+}
+
+/* ---- Responsive ---- */
+
+@media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { margin-left: 0; padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ================================================================
+     SIDEBAR NAVIGATION
+     ================================================================ -->
+
+<aside class="sidebar">
+    <h1>ecbyts API</h1>
+    <div class="status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Checking...</span>
+    </div>
+    <nav>
+        <div class="section-label">Getting Started</div>
+        <a href="#getting-started">Overview</a>
+        <a href="#authentication">Security</a>
+
+        <div class="section-label">REST Endpoints</div>
+        <a href="#health">Health & Status</a>
+        <a href="#elements">Elements</a>
+        <a href="#campaigns">Campaigns</a>
+        <a href="#scenes">Scenes</a>
+        <a href="#families">Families</a>
+        <a href="#edges">Edges</a>
+        <a href="#stamps">Stamps</a>
+        <a href="#groups">Groups</a>
+        <a href="#auth">Auth</a>
+        <a href="#ticker">Ticker</a>
+        <a href="#sao">SAO Protocol</a>
+        <a href="#governance">Governance</a>
+        <a href="#sensors">Sensors</a>
+        <a href="#agents">Agents</a>
+        <a href="#modals">Modals</a>
+        <a href="#export-import">Export / Import</a>
+        <a href="#screenshot">Screenshot</a>
+        <a href="#actions-endpoint">Actions</a>
+
+        <div class="section-label">WebSocket</div>
+        <a href="#websocket">Protocol</a>
+
+        <div class="section-label">Reference</div>
+        <a href="#actions-ref">Actions Reference</a>
+        <a href="#examples">Examples</a>
+        <a href="#errors">Error Codes</a>
+    </nav>
+</aside>
+
+<!-- ================================================================
+     MAIN CONTENT
+     ================================================================ -->
+
+<main class="main">
+
+<div class="search-box">
+    <input type="text" id="search" placeholder="Search endpoints, actions, parameters...">
+</div>
+
+<!-- ---- Getting Started ---- -->
+
+<h2 id="getting-started">Getting Started</h2>
+
+<p>The ecbyts Automation API provides programmatic access to the Environmental Digital Twin application. It enables external tools, scripts, and AI agents to control the application running in the browser via REST endpoints and WebSocket commands.</p>
+
+<h3>Quick Start</h3>
+<pre><code><span class="code-comment"># Start the API server</span>
+npm run api
+
+<span class="code-comment"># Check server health</span>
+curl http://localhost:4000/api/health
+
+<span class="code-comment"># List all available actions</span>
+curl http://localhost:4000/api/actions
+
+<span class="code-comment"># Generate a random model</span>
+curl -X POST http://localhost:4000/api/action \
+  -H <span class="code-str">"Content-Type: application/json"</span> \
+  -d <span class="code-str">'{"action":"generateRandomModel"}'</span></code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3 id="authentication">Security</h3>
+<ul>
+    <li><strong>Localhost only</strong> — WebSocket connections restricted to 127.0.0.1 / ::1</li>
+    <li><strong>JSON required</strong> — POST/PATCH requests must use <code>Content-Type: application/json</code></li>
+    <li><strong>Body limit</strong> — Maximum 5 MB request body</li>
+    <li><strong>Single browser</strong> — Only one browser tab connected at a time (new connection replaces previous)</li>
+    <li><strong>Port config</strong> — Default 4000, override with <code>ECBYTS_PORT</code> environment variable</li>
+</ul>
+
+<!-- ---- Health & Status ---- -->
+
+<h2 id="health">Health & Status</h2>
+
+<div class="endpoint" data-search="health status uptime">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/health</span>
+        <span class="endpoint-desc">Server status & browser connection</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <h4>Response</h4>
+        <pre><code>{
+  <span class="code-str">"success"</span>: <span class="code-kw">true</span>,
+  <span class="code-str">"data"</span>: {
+    <span class="code-str">"browserConnected"</span>: <span class="code-kw">true</span>,
+    <span class="code-str">"uptime"</span>: <span class="code-num">142</span>,
+    <span class="code-str">"actionsCount"</span>: <span class="code-num">196</span>,
+    <span class="code-str">"pendingRequests"</span>: <span class="code-num">0</span>
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+    </div>
+</div>
+
+<div class="endpoint" data-search="state model full">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/state</span>
+        <span class="endpoint-desc">Full model state (elements, campaigns, scenes)</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns the complete model state as built by <code>buildModel()</code>. Equivalent to exporting the model as JSON.</p>
+    </div>
+</div>
+
+<div class="endpoint" data-search="ui language ribbon selected">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/ui/state</span>
+        <span class="endpoint-desc">UI state (selected element, language, active tab)</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <h4>Response</h4>
+        <pre><code>{
+  <span class="code-str">"selectedElement"</span>: <span class="code-str">"el_abc123"</span>,
+  <span class="code-str">"elementCount"</span>: <span class="code-num">12</span>,
+  <span class="code-str">"campaignCount"</span>: <span class="code-num">3</span>,
+  <span class="code-str">"sceneCount"</span>: <span class="code-num">2</span>,
+  <span class="code-str">"language"</span>: <span class="code-str">"en"</span>,
+  <span class="code-str">"activeRibbonTab"</span>: <span class="code-str">"modeling"</span>
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+    </div>
+</div>
+
+<div class="endpoint" data-search="ui consistency audit icons buttons theme">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/ui/consistency</span>
+        <span class="endpoint-desc">Visual consistency audit (icons, fonts, theme)</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Runs a visual audit of the UI. Checks icon hydration, font families, open modals, button styling, theme variables, and form input classes.</p>
+    </div>
+</div>
+
+<!-- ---- Elements ---- -->
+
+<h2 id="elements">Elements</h2>
+
+<div class="endpoint" data-search="elements list all">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/elements</span>
+        <span class="endpoint-desc">List all elements</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns all elements with their data (excluding Three.js mesh references). Each element has: <code>id</code>, <code>family</code>, <code>name</code>, <code>visible</code>, <code>label</code>, <code>color</code>, <code>data</code>, <code>stamps</code>.</p>
+    </div>
+</div>
+
+<div class="endpoint" data-search="element single get by id">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/elements/:id</span>
+        <span class="endpoint-desc">Get single element by ID</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <h4>Parameters</h4>
+        <table><tr><th>Param</th><th>Type</th><th>Description</th></tr>
+        <tr><td><code>:id</code></td><td>string</td><td>Element ID</td></tr></table>
+    </div>
+</div>
+
+<div class="endpoint" data-search="element create add new well plume">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/elements</span>
+        <span class="endpoint-desc">Create new element</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <h4>Request Body</h4>
+        <pre><code>{ <span class="code-str">"familyId"</span>: <span class="code-str">"well"</span> }</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+        <p>Valid family IDs: <code>plume</code>, <code>well</code>, <code>lake</code>, <code>river</code>, <code>spring</code>, <code>building</code>, <code>tank</code>, <code>waste</code>, <code>boundary</code>, <code>sensor</code>, or any custom family.</p>
+    </div>
+</div>
+
+<div class="endpoint" data-search="element update patch modify">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge patch">PATCH</span>
+        <span class="endpoint-path">/api/elements/:id</span>
+        <span class="endpoint-desc">Update element properties</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <h4>Request Body</h4>
+        <pre><code>{
+  <span class="code-str">"updates"</span>: {
+    <span class="code-str">"name"</span>: <span class="code-str">"MW-01"</span>,
+    <span class="code-str">"coordinates"</span>: { <span class="code-str">"easting"</span>: <span class="code-num">350000</span>, <span class="code-str">"northing"</span>: <span class="code-num">7400000</span> }
+  }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+    </div>
+</div>
+
+<div class="endpoint" data-search="element delete remove">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge delete">DELETE</span>
+        <span class="endpoint-path">/api/elements/:id</span>
+        <span class="endpoint-desc">Remove element</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Removes the element and all associated observations, stamps, and edges.</p>
+    </div>
+</div>
+
+<div class="endpoint" data-search="element observations readings">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/elements/:id/observations</span>
+        <span class="endpoint-desc">Get element observations</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns the <code>observations[]</code> array from the element's data.</p>
+    </div>
+</div>
+
+<div class="endpoint" data-search="element stamps tags">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/elements/:id/stamps</span>
+        <span class="endpoint-desc">Get element stamps</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns governance, context, and reporting stamps attached to the element.</p>
+    </div>
+</div>
+
+<div class="endpoint" data-search="element edges relationships">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/elements/:id/edges</span>
+        <span class="endpoint-desc">Get element edges (relationships)</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns all edges (incoming + outgoing) connected to the element.</p>
+    </div>
+</div>
+
+<!-- ---- Campaigns ---- -->
+
+<h2 id="campaigns">Campaigns</h2>
+
+<div class="endpoint" data-search="campaigns list all sampling">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/campaigns</span>
+        <span class="endpoint-desc">List all sampling campaigns</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns all campaigns with their date, team, and visibility state.</p>
+    </div>
+</div>
+
+<div class="endpoint" data-search="campaign create add new">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/campaigns</span>
+        <span class="endpoint-desc">Create new campaign</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Creates a new sampling campaign with default values. No request body required.</p>
+    </div>
+</div>
+
+<div class="endpoint" data-search="campaign update patch change">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge patch">PATCH</span>
+        <span class="endpoint-path">/api/campaigns/:id</span>
+        <span class="endpoint-desc">Update campaign field</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <h4>Request Body</h4>
+        <pre><code>{
+  <span class="code-str">"field"</span>: <span class="code-str">"name"</span>,
+  <span class="code-str">"value"</span>: <span class="code-str">"Q1 2026 Sampling"</span>
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+    </div>
+</div>
+
+<div class="endpoint" data-search="campaign delete remove">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge delete">DELETE</span>
+        <span class="endpoint-path">/api/campaigns/:id</span>
+        <span class="endpoint-desc">Remove campaign</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Removes the campaign. Observations linked to this campaign are NOT removed.</p>
+    </div>
+</div>
+
+<!-- ---- Scenes ---- -->
+
+<h2 id="scenes">Scenes</h2>
+
+<div class="endpoint" data-search="scenes list camera views">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/scenes</span>
+        <span class="endpoint-desc">List all saved camera views</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body"><p>Returns all saved scene (camera view) snapshots.</p></div>
+</div>
+
+<div class="endpoint" data-search="scene create add camera">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/scenes</span>
+        <span class="endpoint-desc">Create new scene</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body"><p>Creates a new scene with default camera position.</p></div>
+</div>
+
+<div class="endpoint" data-search="scene delete remove">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge delete">DELETE</span>
+        <span class="endpoint-path">/api/scenes/:id</span>
+        <span class="endpoint-desc">Remove scene</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body"><p>Removes the saved camera view.</p></div>
+</div>
+
+<!-- ---- Families ---- -->
+
+<h2 id="families">Families</h2>
+
+<div class="endpoint" data-search="families list types">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/families</span>
+        <span class="endpoint-desc">List all element families</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body"><p>Returns built-in and custom families with id, name, icon, code, enabled state.</p></div>
+</div>
+
+<div class="endpoint" data-search="family create add custom">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/families</span>
+        <span class="endpoint-desc">Create custom family</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <h4>Request Body</h4>
+        <pre><code>{ <span class="code-str">"id"</span>: <span class="code-str">"piezometer"</span>, <span class="code-str">"name"</span>: <span class="code-str">"Piezometer"</span>, <span class="code-str">"icon"</span>: <span class="code-str">"gauge"</span> }</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+    </div>
+</div>
+
+<div class="endpoint" data-search="family delete remove custom">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge delete">DELETE</span>
+        <span class="endpoint-path">/api/families/:id</span>
+        <span class="endpoint-desc">Remove custom family</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body"><p>Removes a custom family. Built-in families cannot be deleted.</p></div>
+</div>
+
+<!-- ---- Edges ---- -->
+
+<h2 id="edges">Edges</h2>
+
+<div class="endpoint" data-search="edges list all relationships">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/edges</span>
+        <span class="endpoint-desc">List all element relationships</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body"><p>Returns all edges with source, target, type, and metadata.</p></div>
+</div>
+
+<!-- ---- Stamps ---- -->
+
+<h2 id="stamps">Stamps</h2>
+
+<div class="endpoint" data-search="stamps all elements cross governance reporting">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/stamps</span>
+        <span class="endpoint-desc">All stamps across all elements</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns stamps grouped by element. Each entry includes <code>elementId</code>, <code>elementName</code>, <code>family</code>, and <code>stamps[]</code>.</p>
+    </div>
+</div>
+
+<!-- ---- Groups ---- -->
+
+<h2 id="groups">Groups</h2>
+
+<div class="endpoint" data-search="groups list element family custom grouping">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/groups</span>
+        <span class="endpoint-desc">All element and family groups</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns the full groups state: <code>elementGroups[]</code>, <code>familyGroups[]</code>, <code>elementGroupMap</code>, <code>familyGroupMap</code>.</p>
+    </div>
+</div>
+
+<div class="endpoint" data-search="group single by id">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/groups/:id</span>
+        <span class="endpoint-desc">Get single group by ID</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns a single group object with <code>id</code>, <code>name</code>, <code>color</code>, <code>collapsed</code>, <code>order</code>.</p>
+    </div>
+</div>
+
+<!-- ---- Auth ---- -->
+
+<h2 id="auth">Auth</h2>
+
+<div class="endpoint" data-search="auth status login user role owner permission">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/auth/status</span>
+        <span class="endpoint-desc">Current authentication status</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <h4>Response</h4>
+        <pre><code>{
+  <span class="code-str">"user"</span>: { <span class="code-str">"email"</span>: <span class="code-str">"user@example.com"</span>, <span class="code-str">"provider"</span>: <span class="code-str">"google"</span> },
+  <span class="code-str">"loggedIn"</span>: <span class="code-kw">true</span>,
+  <span class="code-str">"email"</span>: <span class="code-str">"user@example.com"</span>,
+  <span class="code-str">"role"</span>: <span class="code-str">"admin"</span>,
+  <span class="code-str">"observerMode"</span>: <span class="code-str">"disabled"</span>,
+  <span class="code-str">"accessControlActive"</span>: <span class="code-kw">true</span>,
+  <span class="code-str">"owner"</span>: <span class="code-str">"admin@example.com"</span>
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+    </div>
+</div>
+
+<div class="endpoint" data-search="auth rules access control permissions">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/auth/rules</span>
+        <span class="endpoint-desc">Access control rules list</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns the array of access rules. Each rule has: <code>email</code>, <code>role</code> (owner/admin/editor/viewer/observer), <code>areas[]</code>.</p>
+    </div>
+</div>
+
+<div class="endpoint" data-search="auth permissions full export">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/auth/permissions</span>
+        <span class="endpoint-desc">Full permissions config</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns the complete access configuration: <code>owner</code>, <code>observerMode</code>, <code>rules[]</code>.</p>
+    </div>
+</div>
+
+<!-- ---- Ticker ---- -->
+
+<h2 id="ticker">Ticker</h2>
+
+<div class="endpoint" data-search="ticker config items metrics bar">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/ticker</span>
+        <span class="endpoint-desc">Ticker configuration and items</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns the full ticker config: <code>visible</code>, <code>speed</code>, <code>separator</code>, <code>items[]</code>. Each item has <code>filters[]</code>, <code>calculation</code>, <code>label</code>, <code>unitId</code>, <code>precision</code>, <code>color</code>.</p>
+    </div>
+</div>
+
+<div class="endpoint" data-search="ticker values computed live current">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/ticker/values</span>
+        <span class="endpoint-desc">Current computed ticker values</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns the live computed values for all enabled ticker items. Each entry has: <code>id</code>, <code>text</code>, <code>color</code>.</p>
+    </div>
+</div>
+
+<!-- ---- SAO Protocol ---- -->
+
+<h2 id="sao">SAO Protocol</h2>
+
+<div class="endpoint" data-search="sao status scenario tier matrices active">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/sao</span>
+        <span class="endpoint-desc">SAO protocol status</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <h4>Response</h4>
+        <pre><code>{
+  <span class="code-str">"active"</span>: <span class="code-kw">true</span>,
+  <span class="code-str">"scenario"</span>: <span class="code-str">"tailings_dam"</span>,
+  <span class="code-str">"tier"</span>: <span class="code-str">"recommended"</span>,
+  <span class="code-str">"matrices"</span>: [<span class="code-str">"agua"</span>, <span class="code-str">"solo"</span>, <span class="code-str">"ar"</span>],
+  <span class="code-str">"parameterCounts"</span>: { <span class="code-str">"agua"</span>: { <span class="code-str">"essential"</span>: <span class="code-num">15</span>, <span class="code-str">"recommended"</span>: <span class="code-num">28</span>, <span class="code-str">"total"</span>: <span class="code-num">45</span> } }
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+    </div>
+</div>
+
+<div class="endpoint" data-search="sao parameters active monitoring">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/sao/parameters</span>
+        <span class="endpoint-desc">Active monitoring parameters</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns all currently active parameters based on the selected scenario, tier, and matrices. When SAO is inactive, returns all CONFIG.PARAMETERS.</p>
+    </div>
+</div>
+
+<!-- ---- Governance ---- -->
+
+<h2 id="governance">Governance</h2>
+
+<div class="endpoint" data-search="governance contracts wbs eva disbursements">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/governance</span>
+        <span class="endpoint-desc">Contracts, WBS, and EVA data</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns the <code>governance</code> section of the model: contracts, WBS items, parties, disbursements, and EVA calculations. Returns <code>null</code> if no governance data exists.</p>
+    </div>
+</div>
+
+<!-- ---- Sensors ---- -->
+
+<h2 id="sensors">Sensors</h2>
+
+<div class="endpoint" data-search="sensor data iot device weather fetch">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/sensors/:elementId</span>
+        <span class="endpoint-desc">Fetch live sensor data</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Fetches live data for a sensor-family element via its 3-stage pipeline (JSONPlaceholder, FakerAPI, OpenWeatherMap). Element must be of family <code>sensor</code>.</p>
+        <p><strong>Timeout:</strong> 30 seconds (async operation)</p>
+    </div>
+</div>
+
+<!-- ---- Agents ---- -->
+
+<h2 id="agents">Agents</h2>
+
+<div class="endpoint" data-search="agents list all system user llm persona">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/agents</span>
+        <span class="endpoint-desc">List all LLM agents</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns all agents (6 system + user-created). Each agent has: <code>id</code>, <code>name</code>, <code>description</code>, <code>systemPromptAddition</code>, <code>system</code> (boolean).</p>
+    </div>
+</div>
+
+<div class="endpoint" data-search="agent active current selected">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/agents/active</span>
+        <span class="endpoint-desc">Get active agent ID</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <h4>Response</h4>
+        <pre><code>{ <span class="code-str">"id"</span>: <span class="code-str">"default"</span> }</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+    </div>
+</div>
+
+<div class="endpoint" data-search="agent single by id">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/agents/:id</span>
+        <span class="endpoint-desc">Get single agent by ID</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns the agent object. System agents: <code>default</code>, <code>regulatory-br</code>, <code>regulatory-us</code>, <code>regulatory-intl</code>, <code>campaign</code>, <code>hse</code>.</p>
+    </div>
+</div>
+
+<!-- ---- Modals ---- -->
+
+<h2 id="modals">Modals</h2>
+
+<div class="endpoint" data-search="modals list open visible">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/modals</span>
+        <span class="endpoint-desc">List open modals</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body"><p>Returns visible modal overlays with their ID, title, and structure info.</p></div>
+</div>
+
+<div class="endpoint" data-search="modal inspect structure dom">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/modals/:id</span>
+        <span class="endpoint-desc">Inspect modal DOM structure</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body"><p>Returns detailed structure: header, body, footer presence, button audit, dimensions.</p></div>
+</div>
+
+<div class="endpoint" data-search="modals close all">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/modals/close-all</span>
+        <span class="endpoint-desc">Close all open modals</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body"><p>Closes all visible modals including SAO, stamp, and edge modals.</p></div>
+</div>
+
+<!-- ---- Export / Import ---- -->
+
+<h2 id="export-import">Export / Import</h2>
+
+<div class="endpoint" data-search="export json model download">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/export/json</span>
+        <span class="endpoint-desc">Export model as JSON</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body"><p>Returns the full model state as a JSON object.</p></div>
+</div>
+
+<div class="endpoint" data-search="export key eco2 encoded">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/export/key</span>
+        <span class="endpoint-desc">Export model as ECO key</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body"><p>Returns the model encoded as an ECO1 key string. <strong>Timeout:</strong> 30 seconds.</p></div>
+</div>
+
+<div class="endpoint" data-search="import json model upload">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/import/json</span>
+        <span class="endpoint-desc">Import model from JSON</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <h4>Request Body</h4>
+        <pre><code>{ <span class="code-str">"model"</span>: { <span class="code-comment">/* full model object */</span> } }</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+    </div>
+</div>
+
+<div class="endpoint" data-search="import key eco2 decode">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/import/key</span>
+        <span class="endpoint-desc">Import model from ECO key</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <h4>Request Body</h4>
+        <pre><code>{ <span class="code-str">"key"</span>: <span class="code-str">"ECO1..."</span> }</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+    </div>
+</div>
+
+<!-- ---- Screenshot ---- -->
+
+<h2 id="screenshot">Screenshot</h2>
+
+<div class="endpoint" data-search="screenshot capture png image">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/screenshot</span>
+        <span class="endpoint-desc">Capture screenshot as PNG</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <h4>Query Parameters</h4>
+        <table><tr><th>Param</th><th>Default</th><th>Description</th></tr>
+        <tr><td><code>mode</code></td><td>full</td><td><code>full</code> = entire page, <code>3d</code> = canvas only</td></tr></table>
+        <p>Returns PNG image binary (Content-Type: image/png).</p>
+    </div>
+</div>
+
+<!-- ---- Actions Endpoint ---- -->
+
+<h2 id="actions-endpoint">Actions</h2>
+
+<div class="endpoint" data-search="actions list available registry">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge get">GET</span>
+        <span class="endpoint-path">/api/actions</span>
+        <span class="endpoint-desc">List all available actions with metadata</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <p>Returns the ACTION_REGISTRY — array of all registered actions with <code>name</code>, <code>params[]</code>, and <code>cat</code> (category).</p>
+    </div>
+</div>
+
+<div class="endpoint" data-search="action execute run window handler">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/action</span>
+        <span class="endpoint-desc">Execute a single action</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <h4>Request Body</h4>
+        <pre><code>{
+  <span class="code-str">"action"</span>: <span class="code-str">"handleAddObservation"</span>,
+  <span class="code-str">"args"</span>: [<span class="code-str">"el_abc123"</span>]
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+        <p>Executes any <code>window.*</code> function matching the handler pattern. The <code>args</code> array is spread as function arguments.</p>
+    </div>
+</div>
+
+<div class="endpoint" data-search="action batch multiple sequential">
+    <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge post">POST</span>
+        <span class="endpoint-path">/api/action/batch</span>
+        <span class="endpoint-desc">Execute multiple actions sequentially</span>
+        <span class="endpoint-chevron">&#9654;</span>
+    </div>
+    <div class="endpoint-body">
+        <h4>Request Body</h4>
+        <pre><code>{
+  <span class="code-str">"actions"</span>: [
+    { <span class="code-str">"action"</span>: <span class="code-str">"handleAddElement"</span>, <span class="code-str">"args"</span>: [<span class="code-str">"well"</span>] },
+    { <span class="code-str">"action"</span>: <span class="code-str">"handleAddElement"</span>, <span class="code-str">"args"</span>: [<span class="code-str">"plume"</span>] }
+  ],
+  <span class="code-str">"stopOnError"</span>: <span class="code-kw">true</span>
+}</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+    </div>
+</div>
+
+<!-- ---- WebSocket ---- -->
+
+<h2 id="websocket">WebSocket Protocol</h2>
+
+<p>The API uses WebSocket for real-time communication between the Node.js server and the browser tab.</p>
+
+<h3>Connection</h3>
+<pre><code><span class="code-comment"># Connect from localhost only</span>
+ws://localhost:4000/ws</code></pre>
+
+<h3>Message Types</h3>
+<table>
+<tr><th>Type</th><th>Direction</th><th>Description</th></tr>
+<tr><td><code>ready</code></td><td>Browser &rarr; Server</td><td>Browser connected, sends list of available actions</td></tr>
+<tr><td><code>command</code></td><td>Server &rarr; Browser</td><td>Execute command (with <code>requestId</code>)</td></tr>
+<tr><td><code>response</code></td><td>Browser &rarr; Server</td><td>Command result (with matching <code>requestId</code>)</td></tr>
+<tr><td><code>reload</code></td><td>Server &rarr; Browser</td><td>Force page reload</td></tr>
+</table>
+
+<h3>Timeouts</h3>
+<ul>
+    <li><strong>Standard API calls:</strong> 10 seconds</li>
+    <li><strong>Async operations</strong> (LLM, sensor, import): 30 seconds</li>
+    <li><strong>Heartbeat:</strong> 30 seconds ping interval</li>
+    <li><strong>Reconnect:</strong> Up to 50 attempts, 2 second delay</li>
+</ul>
+
+<!-- ---- Actions Reference (dynamic) ---- -->
+
+<h2 id="actions-ref">Actions Reference</h2>
+
+<p>All <span id="action-count">—</span> registered actions available via <code>POST /api/action</code>. Loaded live from the server.</p>
+
+<div class="cat-filters" id="cat-filters"></div>
+
+<input type="text" id="action-search" placeholder="Filter actions..." style="width:100%;padding:8px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:6px;color:var(--text-primary);font-size:13px;margin-bottom:12px;outline:none;">
+
+<div class="actions-grid" id="actions-grid">
+    <p style="color:var(--text-muted)">Loading actions from server...</p>
+</div>
+
+<!-- ---- Examples ---- -->
+
+<h2 id="examples">Examples</h2>
+
+<h3>Create a monitoring well and add an observation</h3>
+<pre><code><span class="code-comment"># 1. Create a well</span>
+curl -X POST http://localhost:4000/api/elements \
+  -H <span class="code-str">"Content-Type: application/json"</span> \
+  -d <span class="code-str">'{"familyId":"well"}'</span>
+
+<span class="code-comment"># 2. Add observation to the well (use element ID from step 1)</span>
+curl -X POST http://localhost:4000/api/action \
+  -H <span class="code-str">"Content-Type: application/json"</span> \
+  -d <span class="code-str">'{"action":"handleAddObservation","args":["el_abc123"]}'</span>
+
+<span class="code-comment"># 3. Set the observation parameter to pH</span>
+curl -X POST http://localhost:4000/api/action \
+  -H <span class="code-str">"Content-Type: application/json"</span> \
+  -d <span class="code-str">'{"action":"handleObservationParameterChange","args":["el_abc123",0,"ph"]}'</span></code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Generate random model and export</h3>
+<pre><code><span class="code-comment"># Generate random model with all element types</span>
+curl -X POST http://localhost:4000/api/action \
+  -H <span class="code-str">"Content-Type: application/json"</span> \
+  -d <span class="code-str">'{"action":"generateRandomModel"}'</span>
+
+<span class="code-comment"># Export as JSON</span>
+curl http://localhost:4000/api/export/json -o model.json
+
+<span class="code-comment"># Export as ECO key</span>
+curl http://localhost:4000/api/export/key</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Query module states</h3>
+<pre><code><span class="code-comment"># Check auth status</span>
+curl http://localhost:4000/api/auth/status
+
+<span class="code-comment"># Get groups configuration</span>
+curl http://localhost:4000/api/groups
+
+<span class="code-comment"># Get ticker computed values</span>
+curl http://localhost:4000/api/ticker/values
+
+<span class="code-comment"># Get SAO protocol status</span>
+curl http://localhost:4000/api/sao
+
+<span class="code-comment"># List all LLM agents</span>
+curl http://localhost:4000/api/agents</code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<h3>Batch actions</h3>
+<pre><code>curl -X POST http://localhost:4000/api/action/batch \
+  -H <span class="code-str">"Content-Type: application/json"</span> \
+  -d <span class="code-str">'{
+    "actions": [
+      {"action": "handleAddElement", "args": ["well"]},
+      {"action": "handleAddElement", "args": ["well"]},
+      {"action": "handleAddElement", "args": ["plume"]},
+      {"action": "handleAddCampaign"}
+    ],
+    "stopOnError": true
+  }'</span></code><button class="copy-btn" onclick="copyCode(this)">Copy</button></pre>
+
+<!-- ---- Error Codes ---- -->
+
+<h2 id="errors">Error Codes</h2>
+
+<table>
+<tr><th>Status</th><th>Meaning</th><th>Common Causes</th></tr>
+<tr><td><code>200</code></td><td>Success</td><td>Request completed. Check <code>success</code> field in response.</td></tr>
+<tr><td><code>400</code></td><td>Bad Request</td><td>Missing required field (e.g. <code>familyId</code>, <code>action</code>)</td></tr>
+<tr><td><code>404</code></td><td>Not Found</td><td>Unknown endpoint or element/resource ID not found</td></tr>
+<tr><td><code>405</code></td><td>Method Not Allowed</td><td>Wrong HTTP method for endpoint (e.g. DELETE on GET-only route)</td></tr>
+<tr><td><code>413</code></td><td>Payload Too Large</td><td>Request body exceeds 5 MB limit</td></tr>
+<tr><td><code>500</code></td><td>Server Error</td><td>Internal error in server or browser command execution</td></tr>
+<tr><td><code>503</code></td><td>Service Unavailable</td><td>Browser not connected to WebSocket</td></tr>
+<tr><td><code>504</code></td><td>Gateway Timeout</td><td>Browser command did not respond within timeout (10s / 30s)</td></tr>
+</table>
+
+<h3>Error Response Format</h3>
+<pre><code>{
+  <span class="code-str">"success"</span>: <span class="code-kw">false</span>,
+  <span class="code-str">"error"</span>: <span class="code-str">"Browser not connected"</span>
+}</code></pre>
+
+</main>
+
+<!-- ================================================================
+     JAVASCRIPT
+     ================================================================ -->
+
+<script>
+// ---- Endpoint toggle ----
+
+function toggleEndpoint(header) {
+    header.parentElement.classList.toggle('open');
+}
+
+// ---- Copy to clipboard ----
+
+function copyCode(btn) {
+    const pre = btn.parentElement;
+    const code = pre.querySelector('code');
+    const text = code.textContent;
+    navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+}
+
+// ---- Health check ----
+
+async function checkHealth() {
+    try {
+        const res = await fetch('/api/health');
+        const data = await res.json();
+        const dot = document.getElementById('status-dot');
+        const text = document.getElementById('status-text');
+        if (data.success && data.data.browserConnected) {
+            dot.classList.add('connected');
+            text.textContent = `Connected (${data.data.actionsCount} actions)`;
+        } else {
+            dot.classList.remove('connected');
+            text.textContent = 'Browser not connected';
+        }
+    } catch {
+        document.getElementById('status-text').textContent = 'Server offline';
+    }
+}
+
+// ---- Load actions reference ----
+
+let allActions = [];
+let activeCat = null;
+
+async function loadActions() {
+    const grid = document.getElementById('actions-grid');
+    const countEl = document.getElementById('action-count');
+    try {
+        const res = await fetch('/api/actions');
+        const data = await res.json();
+        allActions = data.success ? data.data : data;
+        countEl.textContent = allActions.length;
+        buildCatFilters();
+        renderActions();
+    } catch {
+        grid.innerHTML = '<p style="color:var(--text-muted)">Could not load actions. Is the API server running?</p>';
+    }
+}
+
+function buildCatFilters() {
+    const cats = [...new Set(allActions.map(a => a.cat))].sort();
+    const container = document.getElementById('cat-filters');
+    container.innerHTML = `<button class="cat-filter active" onclick="filterCat(null, this)">All</button>` +
+        cats.map(c => `<button class="cat-filter" onclick="filterCat('${c}', this)">${c}</button>`).join('');
+}
+
+function filterCat(cat, btn) {
+    activeCat = cat;
+    document.querySelectorAll('.cat-filter').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    renderActions();
+}
+
+function renderActions() {
+    const grid = document.getElementById('actions-grid');
+    const search = document.getElementById('action-search').value.toLowerCase();
+    const filtered = allActions.filter(a => {
+        if (activeCat && a.cat !== activeCat) return false;
+        if (search && !a.name.toLowerCase().includes(search) && !a.cat.toLowerCase().includes(search) &&
+            !a.params.some(p => p.toLowerCase().includes(search))) return false;
+        return true;
+    });
+    if (!filtered.length) {
+        grid.innerHTML = '<p style="color:var(--text-muted)">No actions match the filter.</p>';
+        return;
+    }
+    grid.innerHTML = filtered.map(a =>
+        `<div class="action-card">
+            <span class="action-name">${a.name}</span>
+            <span class="action-params">${a.params.length ? '(' + a.params.join(', ') + ')' : '()'}</span>
+            <span class="action-cat">${a.cat}</span>
+        </div>`
+    ).join('');
+}
+
+// ---- Search (global) ----
+
+document.getElementById('search').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll('.endpoint').forEach(ep => {
+        const searchText = (ep.dataset.search || '') + ' ' + ep.textContent.toLowerCase();
+        ep.style.display = q && !searchText.includes(q) ? 'none' : '';
+    });
+});
+
+document.getElementById('action-search').addEventListener('input', renderActions);
+
+// ---- Sidebar active state ----
+
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const id = entry.target.id;
+            document.querySelectorAll('.sidebar nav a').forEach(a => {
+                a.classList.toggle('active', a.getAttribute('href') === '#' + id);
+            });
+        }
+    });
+}, { rootMargin: '-20% 0px -70% 0px' });
+
+document.querySelectorAll('h2[id]').forEach(h => observer.observe(h));
+
+// ---- Init ----
+
+checkHealth();
+loadActions();
+setInterval(checkHealth, 15000);
+</script>
+
+</body>
+</html>
